@@ -7,4 +7,6 @@ int _printf(const char *format, ...);
 int _putchar(char c);
 void print_number(int n, int *count);
 int print_binary(unsigned int n);
+
+
 #endif
