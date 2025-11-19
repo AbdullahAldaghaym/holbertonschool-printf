@@ -1,0 +1,49 @@
+.TH _PRINTF 3 "December 2023"
+.SH NAME
+_printf \- formatted output conversion
+.SH SYNOPSIS
+.nf
+.B #include "main.h"
+.sp
+.BI "int _printf(const char *" format ", ...);"
+.fi
+.SH DESCRIPTION
+The
+.B _printf
+function produces output according to a format.
+.PP
+The format string is composed of zero or more directives.
+.SH CONVERSION SPECIFIERS
+.TP
+.B c
+Prints a single character.
+.TP
+.B s  
+Prints a string of characters.
+.TP
+.B %
+Prints a percent sign.
+.TP
+.B d, i
+Prints a signed integer.
+.SH RETURN VALUE
+On success, returns the number of characters printed.
+On error, returns -1.
+.SH EXAMPLES
+To print a character and string:
+.RS
+.PP
+.nf
+_printf("Character: %c, String: %s\\n", 'A', "hello");
+.fi
+.RE
+.PP
+To print a number:
+.RS
+.PP
+.nf
+_printf("Number: %d\\n", 42);
+.fi
+.RE
+.SH AUTHORS
+Solaf Alessa and Abdullah Aldaghaym 

@@ -9,7 +9,32 @@
  */
 int _putchar(char c)
 {
-	return (write(1, &c, 1));
+    return (write(1, &c, 1));
+}
+
+/**
+ * print_number - prints an integer number
+ * @n: number to print
+ * @count: pointer to character counter
+ */
+void print_number(int n, int *count)
+{
+    unsigned int num;
+
+    if (n < 0)
+    {
+        *count += _putchar('-');
+        num = -n;
+    }
+    else
+    {
+        num = n;
+    }
+
+    if (num / 10)
+        print_number(num / 10, count);
+
+    *count += _putchar((num % 10) + '0');
 }
 
 /**
@@ -19,55 +44,59 @@ int _putchar(char c)
  */
 int _printf(const char *format, ...)
 {
-	va_list args;
-	int i = 0, count = 0;
-	char *str;
+    va_list args;
+    int i = 0, count = 0;
+    char *str;
 
-	if (format == NULL)
-		return (-1);
+    if (format == NULL)
+        return (-1);
 
-	va_start(args, format);
+    va_start(args, format);
 
-	while (format[i] != '\0')
-	{
-		if (format[i] == '%')
-		{
-			i++;
-			if (format[i] == '\0')
-				return (-1);
-				
-			if (format[i] == 'c')
-			{
-				count += _putchar(va_arg(args, int));
-			}
-			else if (format[i] == 's')
-			{
-				str = va_arg(args, char *);
-				if (str == NULL)
-					str = "(null)";
-				while (str[0] != '\0')
-				{
-					count += _putchar(str[0]);
-					str++;
-				}
-			}
-			else if (format[i] == '%')
-			{
-				count += _putchar('%');
-			}
-			else
-			{
-				count += _putchar('%');
-				count += _putchar(format[i]);
-			}
-		}
-		else
-		{
-			count += _putchar(format[i]);
-		}
-		i++;
-	}
+    while (format[i] != '\0')
+    {
+        if (format[i] == '%')
+        {
+            i++;
+            if (format[i] == '\0')
+                return (-1);
+                
+            if (format[i] == 'c')
+            {
+                count += _putchar(va_arg(args, int));
+            }
+            else if (format[i] == 's')
+            {
+                str = va_arg(args, char *);
+                if (str == NULL)
+                    str = "(null)";
+                while (str[0] != '\0')
+                {
+                    count += _putchar(str[0]);
+                    str++;
+                }
+            }
+            else if (format[i] == 'd' || format[i] == 'i')
+            {
+                print_number(va_arg(args, int), &count);
+            }
+            else if (format[i] == '%')
+            {
+                count += _putchar('%');
+            }
+            else
+            {
+                count += _putchar('%');
+                count += _putchar(format[i]);
+            }
+        }
+        else
+        {
+            count += _putchar(format[i]);
+        }
+        i++;
+    }
 
-	va_end(args);
-	return (count);
+    va_end(args);
+    return (count);
 }
