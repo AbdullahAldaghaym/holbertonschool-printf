@@ -37,11 +37,34 @@ void print_number(int n, int *count)
     *count += _putchar((num % 10) + '0');
 }
 
+
+/**
+ * print_binary - prints a number in binary
+ * @n: number to print
+ * Return: number of characters printed
+ */
+int print_binary(unsigned int n)
+{
+	int count = 0;
+
+	if (n == 0)
+		return _putchar('0');
+
+	if (n / 2)
+		count += print_binary(n / 2);
+
+	count += _putchar((n % 2) + '0');
+
+	return count;
+}
+
 /**
  * _printf - produces output according to a format
  * @format: character string containing directives
  * Return: number of characters printed
  */
+
+
 int _printf(const char *format, ...)
 {
     va_list args;
