@@ -19,7 +19,13 @@ int putchar_buffer(char c);
 void flush_buffer(void);
 int print_custom_string(va_list args);
 int print_pointer(va_list args);
+
+/* Flag handling functions */
 void handle_flags(int flags, int is_negative, int *count, int specifier);
 int get_flags(const char *format, int *i);
+void print_number_int(unsigned int num, int *count);
+int print_octal_recursive(unsigned int n);
+int print_hex_recursive(unsigned int n, int uppercase);
+int print_hex_long(unsigned long n, int uppercase);
 
 #endif

@@ -6,6 +6,11 @@
 char output_buf[1024];
 int buf_index = 0;
 
+/* Flag characters */
+#define FLAG_PLUS 1
+#define FLAG_SPACE 2
+#define FLAG_HASH 4
+
 /**
  * putchar_buffer - adds character to buffer and flushes when full
  * @c: character to add
@@ -153,8 +158,18 @@ void print_number(int n, int *count, int flags)
     unsigned int num;
     int is_negative = 0;
 
+    /* Handle zero case first */
     if (n == 0)
     {
+        /* For zero, only handle + and space flags */
+        if (flags & FLAG_PLUS)
+        {
+            *count += _putchar('+');
+        }
+        else if (flags & FLAG_SPACE)
+        {
+            *count += _putchar(' ');
+        }
         *count += _putchar('0');
         return;
     }
@@ -169,8 +184,18 @@ void print_number(int n, int *count, int flags)
         num = n;
     }
 
-    /* Handle flags before printing number */
-    handle_flags(flags, is_negative, count, 'd');
+    /* Handle flags before printing number (only for non-negative) */
+    if (!is_negative)
+    {
+        if (flags & FLAG_PLUS)
+        {
+            *count += _putchar('+');
+        }
+        else if (flags & FLAG_SPACE)
+        {
+            *count += _putchar(' ');
+        }
+    }
 
     if (is_negative)
     {
@@ -253,10 +278,8 @@ int print_octal(unsigned int n, int flags)
 
     if (n == 0)
     {
-        if (flags & FLAG_HASH)
-            count += _putchar('0');
-        else
-            count += _putchar('0');
+        /* For zero, just print 0 without hash prefix */
+        count += _putchar('0');
         return count;
     }
 
@@ -315,6 +338,7 @@ int print_hex(unsigned int n, int uppercase, int flags)
 
     if (n == 0)
     {
+        /* For zero, just print 0 without hash prefix */
         count += _putchar('0');
         return count;
     }
