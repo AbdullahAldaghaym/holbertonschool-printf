@@ -118,14 +118,20 @@ int print_string_with_width(char *str, int width)
     if (str == NULL)
         str = "(null)";
 
-    while (*temp++)
+    while (*temp)
+    {
         len++;
+        temp++;
+    }
 
     if (width > len)
         print_padding(width - len, &count);
 
     while (*str)
-        count += _putchar(*str++);
+    {
+        count += _putchar(*str);
+        str++;
+    }
 
     return count;
 }
@@ -141,25 +147,13 @@ int print_char_with_width(char c, int width)
     return count;
 }
 
-void print_number_int(unsigned int num, int *count)
-{
-    if (num / 10)
-        print_number_int(num / 10, count);
-    *count += _putchar((num % 10) + '0');
-}
-
-void print_long_number_int(unsigned long num, int *count)
-{
-    if (num / 10)
-        print_long_number_int(num / 10, count);
-    *count += _putchar((num % 10) + '0');
-}
-
 void print_number_with_width(int n, int *count, int flags, int width)
 {
     char buffer[32];
     int idx = 0, is_negative = 0;
     unsigned int num;
+    int total_len;
+    int j;
 
     if (n == 0)
     {
@@ -184,7 +178,7 @@ void print_number_with_width(int n, int *count, int flags, int width)
         }
     }
 
-    int total_len = idx;
+    total_len = idx;
     if (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE))
         total_len++;
 
@@ -198,8 +192,11 @@ void print_number_with_width(int n, int *count, int flags, int width)
     else if (flags & FLAG_SPACE)
         *count += _putchar(' ');
 
-    while (idx > 0)
-        *count += _putchar(buffer[--idx]);
+    j = idx;
+    while (j > 0)
+    {
+        *count += _putchar(buffer[--j]);
+    }
 }
 
 void print_long_number_with_width(long n, int *count, int flags, int width)
@@ -210,6 +207,21 @@ void print_long_number_with_width(long n, int *count, int flags, int width)
 void print_short_number_with_width(short n, int *count, int flags, int width)
 {
     print_number_with_width((int)n, count, flags, width);
+}
+
+/* باقي الدوال تبقى كما هي بدون تغيير */
+void print_number_int(unsigned int num, int *count)
+{
+    if (num / 10)
+        print_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
+}
+
+void print_long_number_int(unsigned long num, int *count)
+{
+    if (num / 10)
+        print_long_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
 }
 
 void print_number(int n, int *count, int flags)
