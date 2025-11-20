@@ -165,6 +165,30 @@ int print_hex(unsigned int n, int uppercase)
 }
 
 /**
+ * print_hex_long - prints a long unsigned int in hexadecimal
+ * @n: number to print
+ * @uppercase: 1 for uppercase, 0 for lowercase
+ * Return: number of characters printed
+ */
+int print_hex_long(unsigned long n, int uppercase)
+{
+    int count = 0;
+    char *digits;
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n / 16)
+        count += print_hex_long(n / 16, uppercase);
+
+    count += _putchar(digits[n % 16]);
+
+    return count;
+}
+
+/**
  * print_custom_string - prints string with special handling for non-printable chars
  * @args: va_list arguments
  * Return: number of characters printed
@@ -205,6 +229,32 @@ int print_custom_string(va_list args)
 	}
 
 	return count;
+}
+
+/**
+ * print_pointer - prints a pointer address
+ * @args: va_list arguments
+ * Return: number of characters printed
+ */
+int print_pointer(va_list args)
+{
+    void *ptr = va_arg(args, void *);
+    unsigned long address = (unsigned long)ptr;
+    int count = 0;
+    
+    if (ptr == NULL)
+    {
+        return (_printf("(nil)"));
+    }
+    
+    /* Print "0x" prefix */
+    count += _putchar('0');
+    count += _putchar('x');
+    
+    /* Print hexadecimal address */
+    count += print_hex_long(address, 0);
+    
+    return count;
 }
 
 /**
@@ -280,6 +330,10 @@ int _printf(const char *format, ...)
 			else if (format[i] == 'X')
 			{
 				count += print_hex(va_arg(args, unsigned int), 1);
+			}
+			else if (format[i] == 'p')
+			{
+				count += print_pointer(args);
 			}
 			else if (format[i] == '%')
 			{
