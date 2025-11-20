@@ -9,13 +9,11 @@ int buf_index = 0;
 int putchar_buffer(char c)
 {
 	output_buf[buf_index++] = c;
-
 	if (buf_index == 1024)
 	{
 		write(1, output_buf, buf_index);
 		buf_index = 0;
 	}
-
 	return (1);
 }
 
@@ -37,12 +35,10 @@ int get_flags(const char *format, int *i)
 {
     int flags = 0;
     int found_flag = 1;
-    int original_i = *i;
 
     while (found_flag)
     {
         found_flag = 0;
-        
         if (format[*i] == '+')
         {
             flags |= FLAG_PLUS;
@@ -62,18 +58,14 @@ int get_flags(const char *format, int *i)
             found_flag = 1;
         }
     }
-
-    if (format[*i] == '\0' || 
-        (format[*i] != 'c' && format[*i] != 's' && format[*i] != 'S' &&
-         format[*i] != 'd' && format[*i] != 'i' && format[*i] != 'b' &&
-         format[*i] != 'u' && format[*i] != 'o' && format[*i] != 'x' &&
-         format[*i] != 'X' && format[*i] != 'p' && format[*i] != '%'))
-    {
-        *i = original_i;
-        return 0;
-    }
-
     return flags;
+}
+
+void print_number_int(unsigned int num, int *count)
+{
+    if (num / 10)
+        print_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
 }
 
 void print_number(int n, int *count, int flags)
@@ -94,10 +86,7 @@ void print_number(int n, int *count, int flags)
 	if (n < 0)
 	{
 		is_negative = 1;
-		if (n == INT_MIN)
-			num = 2147483648U;
-		else
-			num = -n;
+		num = (n == INT_MIN) ? 2147483648U : -n;
 	}
 	else
 	{
@@ -116,13 +105,7 @@ void print_number(int n, int *count, int flags)
 		*count += _putchar('-');
 
 	if (num / 10)
-	{
-		unsigned int temp = num / 10;
-		if (temp / 10)
-			print_number(temp, count, 0);
-		else
-			*count += _putchar(temp + '0');
-	}
+		print_number_int(num / 10, count);
 
 	*count += _putchar((num % 10) + '0');
 }
@@ -310,18 +293,14 @@ int _printf(const char *format, ...)
 				return (-1);
 			}
 
-			if (format[i] == ' ' && 
-				(format[i + 1] != 'd' && format[i + 1] != 'i' && 
-				 format[i + 1] != 'o' && format[i + 1] != 'x' && 
-				 format[i + 1] != 'X' && format[i + 1] != 'u'))
-			{
-				count += _putchar('%');
-				count += _putchar(' ');
-				i++;
-				continue;
-			}
-
 			flags = get_flags(format, &i);
+			
+			if (format[i] == '\0')
+			{
+				flush_buffer();
+				va_end(args);
+				return (-1);
+			}
 			
 			if (format[i] == 'c')
 			{
