@@ -86,7 +86,10 @@ void print_number(int n, int *count, int flags)
 	if (n < 0)
 	{
 		is_negative = 1;
-		num = (n == INT_MIN) ? 2147483648U : -n;
+		if (n == INT_MIN)
+			num = 2147483648U;
+		else
+			num = (unsigned int)(-n);
 	}
 	else
 	{
