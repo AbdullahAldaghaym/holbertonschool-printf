@@ -47,34 +47,140 @@ int _putchar(char c)
 }
 
 /**
- * print_number - prints an integer number
- * @n: number to print
+ * get_flags - extracts flag characters from format string
+ * @format: format string
+ * @i: pointer to current index in format string
+ * Return: bitmask of flags found
+ */
+int get_flags(const char *format, int *i)
+{
+    int flags = 0;
+    int found_flag = 1;
+
+    while (found_flag)
+    {
+        found_flag = 0;
+        
+        if (format[*i] == '+')
+        {
+            flags |= FLAG_PLUS;
+            (*i)++;
+            found_flag = 1;
+        }
+        else if (format[*i] == ' ')
+        {
+            flags |= FLAG_SPACE;
+            (*i)++;
+            found_flag = 1;
+        }
+        else if (format[*i] == '#')
+        {
+            flags |= FLAG_HASH;
+            (*i)++;
+            found_flag = 1;
+        }
+    }
+
+    return flags;
+}
+
+/**
+ * handle_flags - handles flag characters for numeric conversions
+ * @flags: bitmask of active flags
+ * @is_negative: 1 if number is negative, 0 otherwise
+ * @count: pointer to character counter
+ * @specifier: conversion specifier character
+ */
+void handle_flags(int flags, int is_negative, int *count, int specifier)
+{
+    /* Handle + and space flags for signed numbers */
+    if (specifier == 'd' || specifier == 'i')
+    {
+        if (!is_negative)
+        {
+            if (flags & FLAG_PLUS)
+            {
+                *count += _putchar('+');
+            }
+            else if (flags & FLAG_SPACE)
+            {
+                *count += _putchar(' ');
+            }
+        }
+    }
+    
+    /* Handle # flag for octal and hexadecimal */
+    if (flags & FLAG_HASH)
+    {
+        if (specifier == 'o')
+        {
+            *count += _putchar('0');
+        }
+        else if (specifier == 'x')
+        {
+            *count += _putchar('0');
+            *count += _putchar('x');
+        }
+        else if (specifier == 'X')
+        {
+            *count += _putchar('0');
+            *count += _putchar('X');
+        }
+    }
+}
+
+/**
+ * print_number_int - helper for integer printing (without flags)
+ * @num: number to print
  * @count: pointer to character counter
  */
-void print_number(int n, int *count)
+void print_number_int(unsigned int num, int *count)
 {
-	unsigned int num;
+    if (num / 10)
+        print_number_int(num / 10, count);
 
-	if (n == 0)
-	{
-		*count += _putchar('0');
-		return;
-	}
+    *count += _putchar((num % 10) + '0');
+}
 
-	if (n < 0)
-	{
-		*count += _putchar('-');
-		num = -n;
-	}
-	else
-	{
-		num = n;
-	}
+/**
+ * print_number - prints an integer number with flags
+ * @n: number to print
+ * @count: pointer to character counter
+ * @flags: bitmask of flags
+ */
+void print_number(int n, int *count, int flags)
+{
+    unsigned int num;
+    int is_negative = 0;
 
-	if (num / 10)
-		print_number(num / 10, count);
+    if (n == 0)
+    {
+        *count += _putchar('0');
+        return;
+    }
 
-	*count += _putchar((num % 10) + '0');
+    if (n < 0)
+    {
+        is_negative = 1;
+        num = -n;
+    }
+    else
+    {
+        num = n;
+    }
+
+    /* Handle flags before printing number */
+    handle_flags(flags, is_negative, count, 'd');
+
+    if (is_negative)
+    {
+        *count += _putchar('-');
+    }
+
+    if (num / 10)
+        print_number_int(num / 10, count);
+
+    *count += _putchar((num % 10) + '0');
 }
 
 /**
@@ -84,17 +190,17 @@ void print_number(int n, int *count)
  */
 int print_binary(unsigned int n)
 {
-	int count = 0;
+    int count = 0;
 
-	if (n == 0)
-		return _putchar('0');
+    if (n == 0)
+        return _putchar('0');
 
-	if (n / 2)
-		count += print_binary(n / 2);
+    if (n / 2)
+        count += print_binary(n / 2);
 
-	count += _putchar((n % 2) + '0');
+    count += _putchar((n % 2) + '0');
 
-	return count;
+    return count;
 }
 
 /**
@@ -104,64 +210,127 @@ int print_binary(unsigned int n)
  */
 int print_unsigned(unsigned int n)
 {
-	int count = 0;
+    int count = 0;
 
-	if (n == 0)
-		return _putchar('0');
+    if (n == 0)
+        return _putchar('0');
 
-	if (n / 10)
-		count += print_unsigned(n / 10);
+    if (n / 10)
+        count += print_unsigned(n / 10);
 
-	count += _putchar((n % 10) + '0');
+    count += _putchar((n % 10) + '0');
 
-	return count;
+    return count;
 }
 
 /**
- * print_octal - prints a number in octal
+ * print_octal_recursive - helper for octal printing
  * @n: number to print
  * Return: number of characters printed
  */
-int print_octal(unsigned int n)
+int print_octal_recursive(unsigned int n)
 {
-	int count = 0;
+    int count = 0;
 
-	if (n == 0)
-		return _putchar('0');
+    if (n / 8)
+        count += print_octal_recursive(n / 8);
 
-	if (n / 8)
-		count += print_octal(n / 8);
+    count += _putchar((n % 8) + '0');
 
-	count += _putchar((n % 8) + '0');
-
-	return count;
+    return count;
 }
 
 /**
- * print_hex - prints a number in hexadecimal
+ * print_octal - prints a number in octal with flags
+ * @n: number to print
+ * @flags: bitmask of flags
+ * Return: number of characters printed
+ */
+int print_octal(unsigned int n, int flags)
+{
+    int count = 0;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (n == 0)
+    {
+        if (flags & FLAG_HASH)
+            count += _putchar('0');
+        else
+            count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        count += _putchar('0');
+
+    if (n / 8)
+        count += print_octal_recursive(n / 8);
+
+    count += _putchar((n % 8) + '0');
+
+    return count;
+}
+
+/**
+ * print_hex_recursive - helper for hexadecimal printing
  * @n: number to print
  * @uppercase: 1 for uppercase, 0 for lowercase
  * Return: number of characters printed
  */
-int print_hex(unsigned int n, int uppercase)
+int print_hex_recursive(unsigned int n, int uppercase)
 {
-	int count = 0;
-	char *digits;
+    int count = 0;
+    char *digits;
 
-	if (uppercase)
-		digits = "0123456789ABCDEF";
-	else
-		digits = "0123456789abcdef";
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
 
-	if (n == 0)
-		return _putchar('0');
+    if (n / 16)
+        count += print_hex_recursive(n / 16, uppercase);
 
-	if (n / 16)
-		count += print_hex(n / 16, uppercase);
+    count += _putchar(digits[n % 16]);
 
-	count += _putchar(digits[n % 16]);
+    return count;
+}
 
-	return count;
+/**
+ * print_hex - prints a number in hexadecimal with flags
+ * @n: number to print
+ * @uppercase: 1 for uppercase, 0 for lowercase
+ * @flags: bitmask of flags
+ * Return: number of characters printed
+ */
+int print_hex(unsigned int n, int uppercase, int flags)
+{
+    int count = 0;
+    char *digits;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    if (n / 16)
+        count += print_hex_recursive(n / 16, uppercase);
+
+    count += _putchar(digits[n % 16]);
+
+    return count;
 }
 
 /**
@@ -195,40 +364,40 @@ int print_hex_long(unsigned long n, int uppercase)
  */
 int print_custom_string(va_list args)
 {
-	char *str = va_arg(args, char *);
-	int count = 0;
-	unsigned char c;
+    char *str = va_arg(args, char *);
+    int count = 0;
+    unsigned char c;
 
-	if (str == NULL)
-		str = "(null)";
+    if (str == NULL)
+        str = "(null)";
 
-	while (*str)
-	{
-		c = (unsigned char)*str;
-		
-		if (c < 32 || c >= 127)
-		{
-			count += _putchar('\\');
-			count += _putchar('x');
-			
-			if (c / 16 < 10)
-				count += _putchar((c / 16) + '0');
-			else
-				count += _putchar((c / 16) - 10 + 'A');
-			
-			if (c % 16 < 10)
-				count += _putchar((c % 16) + '0');
-			else
-				count += _putchar((c % 16) - 10 + 'A');
-		}
-		else
-		{
-			count += _putchar(c);
-		}
-		str++;
-	}
+    while (*str)
+    {
+        c = (unsigned char)*str;
+        
+        if (c < 32 || c >= 127)
+        {
+            count += _putchar('\\');
+            count += _putchar('x');
+            
+            if (c / 16 < 10)
+                count += _putchar((c / 16) + '0');
+            else
+                count += _putchar((c / 16) - 10 + 'A');
+            
+            if (c % 16 < 10)
+                count += _putchar((c % 16) + '0');
+            else
+                count += _putchar((c % 16) - 10 + 'A');
+        }
+        else
+        {
+            count += _putchar(c);
+        }
+        str++;
+    }
 
-	return count;
+    return count;
 }
 
 /**
@@ -264,95 +433,99 @@ int print_pointer(va_list args)
  */
 int _printf(const char *format, ...)
 {
-	va_list args;
-	int i = 0, count = 0;
-	char *str;
+    va_list args;
+    int i = 0, count = 0;
+    char *str;
+    int flags;
 
-	if (format == NULL)
-		return (-1);
+    if (format == NULL)
+        return (-1);
 
-	/* Reset buffer at start */
-	buf_index = 0;
+    /* Reset buffer at start */
+    buf_index = 0;
 
-	va_start(args, format);
+    va_start(args, format);
 
-	while (format[i] != '\0')
-	{
-		if (format[i] == '%')
-		{
-			i++;
-			if (format[i] == '\0')
-			{
-				flush_buffer();
-				va_end(args);
-				return (-1);
-			}
-				
-			if (format[i] == 'c')
-			{
-				count += _putchar(va_arg(args, int));
-			}
-			else if (format[i] == 's')
-			{
-				str = va_arg(args, char *);
-				if (str == NULL)
-					str = "(null)";
-				while (str[0] != '\0')
-				{
-					count += _putchar(str[0]);
-					str++;
-				}
-			}
-			else if (format[i] == 'S')
-			{
-				count += print_custom_string(args);
-			}
-			else if (format[i] == 'd' || format[i] == 'i')
-			{
-				print_number(va_arg(args, int), &count);
-			}
-			else if (format[i] == 'b')
-			{
-				count += print_binary(va_arg(args, unsigned int));
-			}
-			else if (format[i] == 'u')
-			{
-				count += print_unsigned(va_arg(args, unsigned int));
-			}
-			else if (format[i] == 'o')
-			{
-				count += print_octal(va_arg(args, unsigned int));
-			}
-			else if (format[i] == 'x')
-			{
-				count += print_hex(va_arg(args, unsigned int), 0);
-			}
-			else if (format[i] == 'X')
-			{
-				count += print_hex(va_arg(args, unsigned int), 1);
-			}
-			else if (format[i] == 'p')
-			{
-				count += print_pointer(args);
-			}
-			else if (format[i] == '%')
-			{
-				count += _putchar('%');
-			}
-			else
-			{
-				count += _putchar('%');
-				count += _putchar(format[i]);
-			}
-		}
-		else
-		{
-			count += _putchar(format[i]);
-		}
-		i++;
-	}
+    while (format[i] != '\0')
+    {
+        if (format[i] == '%')
+        {
+            i++;
+            if (format[i] == '\0')
+            {
+                flush_buffer();
+                va_end(args);
+                return (-1);
+            }
 
-	flush_buffer();
-	va_end(args);
-	return (count);
+            /* Extract flags */
+            flags = get_flags(format, &i);
+            
+            if (format[i] == 'c')
+            {
+                count += _putchar(va_arg(args, int));
+            }
+            else if (format[i] == 's')
+            {
+                str = va_arg(args, char *);
+                if (str == NULL)
+                    str = "(null)";
+                while (str[0] != '\0')
+                {
+                    count += _putchar(str[0]);
+                    str++;
+                }
+            }
+            else if (format[i] == 'S')
+            {
+                count += print_custom_string(args);
+            }
+            else if (format[i] == 'd' || format[i] == 'i')
+            {
+                print_number(va_arg(args, int), &count, flags);
+            }
+            else if (format[i] == 'b')
+            {
+                count += print_binary(va_arg(args, unsigned int));
+            }
+            else if (format[i] == 'u')
+            {
+                count += print_unsigned(va_arg(args, unsigned int));
+            }
+            else if (format[i] == 'o')
+            {
+                count += print_octal(va_arg(args, unsigned int), flags);
+            }
+            else if (format[i] == 'x')
+            {
+                count += print_hex(va_arg(args, unsigned int), 0, flags);
+            }
+            else if (format[i] == 'X')
+            {
+                count += print_hex(va_arg(args, unsigned int), 1, flags);
+            }
+            else if (format[i] == 'p')
+            {
+                count += print_pointer(args);
+            }
+            else if (format[i] == '%')
+            {
+                count += _putchar('%');
+            }
+            else
+            {
+                count += _putchar('%');
+                count += _putchar(format[i]);
+            }
+        }
+        else
+        {
+            count += _putchar(format[i]);
+        }
+        i++;
+    }
+
+    flush_buffer();
+    va_end(args);
+    return (count);
 }
