@@ -209,7 +209,6 @@ void print_short_number_with_width(short n, int *count, int flags, int width)
     print_number_with_width((int)n, count, flags, width);
 }
 
-/* باقي الدوال تبقى كما هي بدون تغيير */
 void print_number_int(unsigned int num, int *count)
 {
     if (num / 10)
