@@ -12,4 +12,5 @@ int print_octal(unsigned int n);
 int print_hex(unsigned int n, int uppercase);
 int putchar_buffer(char c);
 void flush_buffer(void);
+int print_custom_string(va_list args); 
 #endif
