@@ -6,11 +6,6 @@
 char output_buf[1024];
 int buf_index = 0;
 
-/* Flag characters */
-#define FLAG_PLUS 1
-#define FLAG_SPACE 2
-#define FLAG_HASH 4
-
 /**
  * putchar_buffer - adds character to buffer and flushes when full
  * @c: character to add
@@ -74,9 +69,20 @@ int get_flags(const char *format, int *i)
         }
         else if (format[*i] == ' ')
         {
-            flags |= FLAG_SPACE;
-            (*i)++;
-            found_flag = 1;
+            /* تأكد أن space flag يكون فقط قبل numeric specifiers */
+            if (format[*i + 1] == 'd' || format[*i + 1] == 'i' || 
+                format[*i + 1] == 'o' || format[*i + 1] == 'x' || 
+                format[*i + 1] == 'X' || format[*i + 1] == 'u')
+            {
+                flags |= FLAG_SPACE;
+                (*i)++;
+                found_flag = 1;
+            }
+            else
+            {
+                /* إذا لم يكن متبوعاً بـ numeric specifier، توقف */
+                break;
+            }
         }
         else if (format[*i] == '#')
         {
@@ -482,9 +488,10 @@ int _printf(const char *format, ...)
                 return (-1);
             }
 
-            /* Extract flags */
+            /* Extract flags فقط إذا كان الحرف flag صالح */
             flags = get_flags(format, &i);
             
+            /* إذا كان الحرف الحالي ليس specifier صالح بعد الـ flags، عالج كحالة خاصة */
             if (format[i] == 'c')
             {
                 count += _putchar(va_arg(args, int));
@@ -538,6 +545,7 @@ int _printf(const char *format, ...)
             }
             else
             {
+                /* إذا لم يكن specifier معروف، اطبع % والحرف */
                 count += _putchar('%');
                 count += _putchar(format[i]);
             }
