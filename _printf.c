@@ -37,6 +37,7 @@ int get_flags(const char *format, int *i)
 {
     int flags = 0;
     int found_flag = 1;
+    int original_i = *i;
 
     while (found_flag)
     {
@@ -60,6 +61,16 @@ int get_flags(const char *format, int *i)
             (*i)++;
             found_flag = 1;
         }
+    }
+
+    if (format[*i] == '\0' || 
+        (format[*i] != 'c' && format[*i] != 's' && format[*i] != 'S' &&
+         format[*i] != 'd' && format[*i] != 'i' && format[*i] != 'b' &&
+         format[*i] != 'u' && format[*i] != 'o' && format[*i] != 'x' &&
+         format[*i] != 'X' && format[*i] != 'p' && format[*i] != '%'))
+    {
+        *i = original_i;
+        return 0;
     }
 
     return flags;
@@ -297,6 +308,17 @@ int _printf(const char *format, ...)
 				flush_buffer();
 				va_end(args);
 				return (-1);
+			}
+
+			if (format[i] == ' ' && 
+				(format[i + 1] != 'd' && format[i + 1] != 'i' && 
+				 format[i + 1] != 'o' && format[i + 1] != 'x' && 
+				 format[i + 1] != 'X' && format[i + 1] != 'u'))
+			{
+				count += _putchar('%');
+				count += _putchar(' ');
+				i++;
+				continue;
 			}
 
 			flags = get_flags(format, &i);
