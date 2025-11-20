@@ -79,6 +79,68 @@ int get_length(const char *format, int *i)
     return length;
 }
 
+int get_width(const char *format, int *i, va_list args)
+{
+    int width = 0;
+
+    if (format[*i] >= '0' && format[*i] <= '9')
+    {
+        while (format[*i] >= '0' && format[*i] <= '9')
+        {
+            width = width * 10 + (format[*i] - '0');
+            (*i)++;
+        }
+    }
+    else if (format[*i] == '*')
+    {
+        width = va_arg(args, int);
+        (*i)++;
+    }
+
+    return width;
+}
+
+void print_padding(int width, int *count)
+{
+    while (width > 0)
+    {
+        *count += _putchar(' ');
+        width--;
+    }
+}
+
+int print_string_with_width(char *str, int width)
+{
+    int count = 0;
+    int len = 0;
+    char *temp = str;
+
+    if (str == NULL)
+        str = "(null)";
+
+    while (*temp++)
+        len++;
+
+    if (width > len)
+        print_padding(width - len, &count);
+
+    while (*str)
+        count += _putchar(*str++);
+
+    return count;
+}
+
+int print_char_with_width(char c, int width)
+{
+    int count = 0;
+
+    if (width > 1)
+        print_padding(width - 1, &count);
+
+    count += _putchar(c);
+    return count;
+}
+
 void print_number_int(unsigned int num, int *count)
 {
     if (num / 10)
@@ -91,6 +153,63 @@ void print_long_number_int(unsigned long num, int *count)
     if (num / 10)
         print_long_number_int(num / 10, count);
     *count += _putchar((num % 10) + '0');
+}
+
+void print_number_with_width(int n, int *count, int flags, int width)
+{
+    char buffer[32];
+    int idx = 0, is_negative = 0;
+    unsigned int num;
+
+    if (n == 0)
+    {
+        buffer[idx++] = '0';
+    }
+    else
+    {
+        if (n < 0)
+        {
+            is_negative = 1;
+            num = (unsigned int)(-n);
+        }
+        else
+        {
+            num = n;
+        }
+
+        while (num)
+        {
+            buffer[idx++] = (num % 10) + '0';
+            num /= 10;
+        }
+    }
+
+    int total_len = idx;
+    if (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE))
+        total_len++;
+
+    if (width > total_len)
+        print_padding(width - total_len, count);
+
+    if (is_negative)
+        *count += _putchar('-');
+    else if (flags & FLAG_PLUS)
+        *count += _putchar('+');
+    else if (flags & FLAG_SPACE)
+        *count += _putchar(' ');
+
+    while (idx > 0)
+        *count += _putchar(buffer[--idx]);
+}
+
+void print_long_number_with_width(long n, int *count, int flags, int width)
+{
+    print_number_with_width((int)n, count, flags, width);
+}
+
+void print_short_number_with_width(short n, int *count, int flags, int width)
+{
+    print_number_with_width((int)n, count, flags, width);
 }
 
 void print_number(int n, int *count, int flags)
@@ -429,7 +548,6 @@ int print_short_hex(unsigned short n, int uppercase, int flags)
 	return count;
 }
 
-
 int print_binary(unsigned int n)
 {
 	int count = 0;
@@ -525,7 +643,7 @@ int _printf(const char *format, ...)
 	va_list args;
 	int i = 0, count = 0;
 	char *str;
-	int flags, length;
+	int flags, length, width;
 
 	if (format == NULL)
 		return (-1);
@@ -546,6 +664,7 @@ int _printf(const char *format, ...)
 			}
 
 			flags = get_flags(format, &i);
+			width = get_width(format, &i, args);
 			length = get_length(format, &i);
 			
 			if (format[i] == '\0')
@@ -557,18 +676,12 @@ int _printf(const char *format, ...)
 			
 			if (format[i] == 'c')
 			{
-				count += _putchar(va_arg(args, int));
+				count += print_char_with_width(va_arg(args, int), width);
 			}
 			else if (format[i] == 's')
 			{
 				str = va_arg(args, char *);
-				if (str == NULL)
-					str = "(null)";
-				while (str[0] != '\0')
-				{
-					count += _putchar(str[0]);
-					str++;
-				}
+				count += print_string_with_width(str, width);
 			}
 			else if (format[i] == 'S')
 			{
@@ -577,11 +690,11 @@ int _printf(const char *format, ...)
 			else if (format[i] == 'd' || format[i] == 'i')
 			{
 				if (length == LENGTH_L)
-					print_long_number(va_arg(args, long), &count, flags);
+					print_long_number_with_width(va_arg(args, long), &count, flags, width);
 				else if (length == LENGTH_H)
-					print_short_number((short)va_arg(args, int), &count, flags);
+					print_short_number_with_width((short)va_arg(args, int), &count, flags, width);
 				else
-					print_number(va_arg(args, int), &count, flags);
+					print_number_with_width(va_arg(args, int), &count, flags, width);
 			}
 			else if (format[i] == 'u')
 			{
