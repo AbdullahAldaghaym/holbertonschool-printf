@@ -10,5 +10,6 @@ int print_binary(unsigned int n);
 int print_unsigned(unsigned int n);
 int print_octal(unsigned int n);
 int print_hex(unsigned int n, int uppercase);
-
+int putchar_buffer(char c);
+void flush_buffer(void);
 #endif

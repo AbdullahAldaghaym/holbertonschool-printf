@@ -2,21 +2,55 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+/* Buffer Variables */
+char output_buf[1024];
+int buf_index = 0;
+
 /**
-	* _putchar - writes the character c to stdout
-	* @c: The character to print
-	* Return: On success 1.
-	*/
-int _putchar(char c)
+ * putchar_buffer - adds character to buffer and flushes when full
+ * @c: character to add
+ * Return: 1 on success
+ */
+int putchar_buffer(char c)
 {
-	return (write(1, &c, 1));
+	output_buf[buf_index++] = c;
+
+	if (buf_index == 1024)
+	{
+		write(1, output_buf, buf_index);
+		buf_index = 0;
+	}
+
+	return (1);
 }
 
 /**
-	* print_number - prints an integer number
-	* @n: number to print
-	* @count: pointer to character counter
-	*/
+ * flush_buffer - writes remaining buffer to stdout
+ */
+void flush_buffer(void)
+{
+	if (buf_index > 0)
+	{
+		write(1, output_buf, buf_index);
+		buf_index = 0;
+	}
+}
+
+/**
+ * _putchar - writes the character c to stdout using buffer
+ * @c: The character to print
+ * Return: On success 1.
+ */
+int _putchar(char c)
+{
+	return (putchar_buffer(c));
+}
+
+/**
+ * print_number - prints an integer number
+ * @n: number to print
+ * @count: pointer to character counter
+ */
 void print_number(int n, int *count)
 {
 	unsigned int num;
@@ -44,10 +78,10 @@ void print_number(int n, int *count)
 }
 
 /**
-	* print_binary - prints a number in binary
-	* @n: number to print
-	* Return: number of characters printed
-	*/
+ * print_binary - prints a number in binary
+ * @n: number to print
+ * Return: number of characters printed
+ */
 int print_binary(unsigned int n)
 {
 	int count = 0;
@@ -64,10 +98,10 @@ int print_binary(unsigned int n)
 }
 
 /**
-	* print_unsigned - prints an unsigned integer
-	* @n: number to print
-	* Return: number of characters printed
-	*/
+ * print_unsigned - prints an unsigned integer
+ * @n: number to print
+ * Return: number of characters printed
+ */
 int print_unsigned(unsigned int n)
 {
 	int count = 0;
@@ -81,10 +115,10 @@ int print_unsigned(unsigned int n)
 }
 
 /**
-	* print_octal - prints a number in octal
-	* @n: number to print
-	* Return: number of characters printed
-	*/
+ * print_octal - prints a number in octal
+ * @n: number to print
+ * Return: number of characters printed
+ */
 int print_octal(unsigned int n)
 {
 	int count = 0;
@@ -98,11 +132,11 @@ int print_octal(unsigned int n)
 }
 
 /**
-	* print_hex - prints a number in hexadecimal
-	* @n: number to print
-	* @uppercase: 1 for uppercase, 0 for lowercase
-	* Return: number of characters printed
-	*/
+ * print_hex - prints a number in hexadecimal
+ * @n: number to print
+ * @uppercase: 1 for uppercase, 0 for lowercase
+ * Return: number of characters printed
+ */
 int print_hex(unsigned int n, int uppercase)
 {
 	int count = 0;
@@ -122,10 +156,10 @@ int print_hex(unsigned int n, int uppercase)
 }
 
 /**
-	* _printf - produces output according to a format
-	* @format: character string containing directives
-	* Return: number of characters printed
-	*/
+ * _printf - produces output according to a format
+ * @format: character string containing directives
+ * Return: number of characters printed
+ */
 int _printf(const char *format, ...)
 {
 	va_list args;
@@ -135,6 +169,9 @@ int _printf(const char *format, ...)
 	if (format == NULL)
 		return (-1);
 
+	/* Reset buffer at start */
+	buf_index = 0;
+
 	va_start(args, format);
 
 	while (format[i] != '\0')
@@ -143,10 +180,15 @@ int _printf(const char *format, ...)
 		{
 			i++;
 			if (format[i] == '\0')
+			{
+				flush_buffer();
 				return (-1);
-
+			}
+				
 			if (format[i] == 'c')
+			{
 				count += _putchar(va_arg(args, int));
+			}
 			else if (format[i] == 's')
 			{
 				str = va_arg(args, char *);
@@ -159,19 +201,33 @@ int _printf(const char *format, ...)
 				}
 			}
 			else if (format[i] == 'd' || format[i] == 'i')
+			{
 				print_number(va_arg(args, int), &count);
+			}
 			else if (format[i] == 'b')
+			{
 				count += print_binary(va_arg(args, unsigned int));
+			}
 			else if (format[i] == 'u')
+			{
 				count += print_unsigned(va_arg(args, unsigned int));
+			}
 			else if (format[i] == 'o')
+			{
 				count += print_octal(va_arg(args, unsigned int));
+			}
 			else if (format[i] == 'x')
+			{
 				count += print_hex(va_arg(args, unsigned int), 0);
+			}
 			else if (format[i] == 'X')
+			{
 				count += print_hex(va_arg(args, unsigned int), 1);
+			}
 			else if (format[i] == '%')
+			{
 				count += _putchar('%');
+			}
 			else
 			{
 				count += _putchar('%');
@@ -179,10 +235,13 @@ int _printf(const char *format, ...)
 			}
 		}
 		else
+		{
 			count += _putchar(format[i]);
+		}
 		i++;
 	}
 
+	flush_buffer();
 	va_end(args);
 	return (count);
 }
