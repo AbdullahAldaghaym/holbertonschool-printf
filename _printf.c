@@ -61,10 +61,35 @@ int get_flags(const char *format, int *i)
     return flags;
 }
 
+int get_length(const char *format, int *i)
+{
+    int length = LENGTH_NONE;
+
+    if (format[*i] == 'l')
+    {
+        length = LENGTH_L;
+        (*i)++;
+    }
+    else if (format[*i] == 'h')
+    {
+        length = LENGTH_H;
+        (*i)++;
+    }
+
+    return length;
+}
+
 void print_number_int(unsigned int num, int *count)
 {
     if (num / 10)
         print_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
+}
+
+void print_long_number_int(unsigned long num, int *count)
+{
+    if (num / 10)
+        print_long_number_int(num / 10, count);
     *count += _putchar((num % 10) + '0');
 }
 
@@ -113,19 +138,91 @@ void print_number(int n, int *count, int flags)
 	*count += _putchar((num % 10) + '0');
 }
 
-int print_binary(unsigned int n)
+void print_long_number(long n, int *count, int flags)
 {
-	int count = 0;
+	unsigned long num;
+	int is_negative = 0;
 
 	if (n == 0)
-		return _putchar('0');
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
 
-	if (n / 2)
-		count += print_binary(n / 2);
+	if (n < 0)
+	{
+		is_negative = 1;
+		if (n == LONG_MIN)
+			num = (unsigned long)LONG_MAX + 1;
+		else
+			num = (unsigned long)(-n);
+	}
+	else
+	{
+		num = n;
+	}
 
-	count += _putchar((n % 2) + '0');
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
 
-	return count;
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_long_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+void print_short_number(short n, int *count, int flags)
+{
+	unsigned short num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		num = (unsigned short)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
 }
 
 int print_unsigned(unsigned int n)
@@ -143,7 +240,81 @@ int print_unsigned(unsigned int n)
 	return count;
 }
 
+int print_long_unsigned(unsigned long n)
+{
+	int count = 0;
+
+	if (n == 0)
+		return _putchar('0');
+
+	if (n / 10)
+		count += print_long_unsigned(n / 10);
+
+	count += _putchar((n % 10) + '0');
+
+	return count;
+}
+
+int print_short_unsigned(unsigned short n)
+{
+	int count = 0;
+
+	if (n == 0)
+		return _putchar('0');
+
+	if (n / 10)
+		count += print_unsigned(n / 10);
+
+	count += _putchar((n % 10) + '0');
+
+	return count;
+}
+
 int print_octal(unsigned int n, int flags)
+{
+	int count = 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+	if (n == 0)
+	{
+		count += _putchar('0');
+		return count;
+	}
+
+	if (has_hash)
+		count += _putchar('0');
+
+	if (n / 8)
+		count += print_octal(n / 8, 0);
+
+	count += _putchar((n % 8) + '0');
+
+	return count;
+}
+
+int print_long_octal(unsigned long n, int flags)
+{
+	int count = 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+	if (n == 0)
+	{
+		count += _putchar('0');
+		return count;
+	}
+
+	if (has_hash)
+		count += _putchar('0');
+
+	if (n / 8)
+		count += print_long_octal(n / 8, 0);
+
+	count += _putchar((n % 8) + '0');
+
+	return count;
+}
+
+int print_short_octal(unsigned short n, int flags)
 {
 	int count = 0;
 	int has_hash = (flags & FLAG_HASH) && (n != 0);
@@ -192,6 +363,84 @@ int print_hex(unsigned int n, int uppercase, int flags)
 		count += print_hex(n / 16, uppercase, 0);
 
 	count += _putchar(digits[n % 16]);
+
+	return count;
+}
+
+int print_long_hex(unsigned long n, int uppercase, int flags)
+{
+	int count = 0;
+	char *digits;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+	if (uppercase)
+		digits = "0123456789ABCDEF";
+	else
+		digits = "0123456789abcdef";
+
+	if (n == 0)
+	{
+		count += _putchar('0');
+		return count;
+	}
+
+	if (has_hash)
+	{
+		count += _putchar('0');
+		count += _putchar(uppercase ? 'X' : 'x');
+	}
+
+	if (n / 16)
+		count += print_long_hex(n / 16, uppercase, 0);
+
+	count += _putchar(digits[n % 16]);
+
+	return count;
+}
+
+int print_short_hex(unsigned short n, int uppercase, int flags)
+{
+	int count = 0;
+	char *digits;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+	if (uppercase)
+		digits = "0123456789ABCDEF";
+	else
+		digits = "0123456789abcdef";
+
+	if (n == 0)
+	{
+		count += _putchar('0');
+		return count;
+	}
+
+	if (has_hash)
+	{
+		count += _putchar('0');
+		count += _putchar(uppercase ? 'X' : 'x');
+	}
+
+	if (n / 16)
+		count += print_hex(n / 16, uppercase, 0);
+
+	count += _putchar(digits[n % 16]);
+
+	return count;
+}
+
+
+int print_binary(unsigned int n)
+{
+	int count = 0;
+
+	if (n == 0)
+		return _putchar('0');
+
+	if (n / 2)
+		count += print_binary(n / 2);
+
+	count += _putchar((n % 2) + '0');
 
 	return count;
 }
@@ -276,7 +525,7 @@ int _printf(const char *format, ...)
 	va_list args;
 	int i = 0, count = 0;
 	char *str;
-	int flags;
+	int flags, length;
 
 	if (format == NULL)
 		return (-1);
@@ -297,6 +546,7 @@ int _printf(const char *format, ...)
 			}
 
 			flags = get_flags(format, &i);
+			length = get_length(format, &i);
 			
 			if (format[i] == '\0')
 			{
@@ -326,27 +576,52 @@ int _printf(const char *format, ...)
 			}
 			else if (format[i] == 'd' || format[i] == 'i')
 			{
-				print_number(va_arg(args, int), &count, flags);
+				if (length == LENGTH_L)
+					print_long_number(va_arg(args, long), &count, flags);
+				else if (length == LENGTH_H)
+					print_short_number((short)va_arg(args, int), &count, flags);
+				else
+					print_number(va_arg(args, int), &count, flags);
+			}
+			else if (format[i] == 'u')
+			{
+				if (length == LENGTH_L)
+					count += print_long_unsigned(va_arg(args, unsigned long));
+				else if (length == LENGTH_H)
+					count += print_short_unsigned((unsigned short)va_arg(args, unsigned int));
+				else
+					count += print_unsigned(va_arg(args, unsigned int));
+			}
+			else if (format[i] == 'o')
+			{
+				if (length == LENGTH_L)
+					count += print_long_octal(va_arg(args, unsigned long), flags);
+				else if (length == LENGTH_H)
+					count += print_short_octal((unsigned short)va_arg(args, unsigned int), flags);
+				else
+					count += print_octal(va_arg(args, unsigned int), flags);
+			}
+			else if (format[i] == 'x')
+			{
+				if (length == LENGTH_L)
+					count += print_long_hex(va_arg(args, unsigned long), 0, flags);
+				else if (length == LENGTH_H)
+					count += print_short_hex((unsigned short)va_arg(args, unsigned int), 0, flags);
+				else
+					count += print_hex(va_arg(args, unsigned int), 0, flags);
+			}
+			else if (format[i] == 'X')
+			{
+				if (length == LENGTH_L)
+					count += print_long_hex(va_arg(args, unsigned long), 1, flags);
+				else if (length == LENGTH_H)
+					count += print_short_hex((unsigned short)va_arg(args, unsigned int), 1, flags);
+				else
+					count += print_hex(va_arg(args, unsigned int), 1, flags);
 			}
 			else if (format[i] == 'b')
 			{
 				count += print_binary(va_arg(args, unsigned int));
-			}
-			else if (format[i] == 'u')
-			{
-				count += print_unsigned(va_arg(args, unsigned int));
-			}
-			else if (format[i] == 'o')
-			{
-				count += print_octal(va_arg(args, unsigned int), flags);
-			}
-			else if (format[i] == 'x')
-			{
-				count += print_hex(va_arg(args, unsigned int), 0, flags);
-			}
-			else if (format[i] == 'X')
-			{
-				count += print_hex(va_arg(args, unsigned int), 1, flags);
 			}
 			else if (format[i] == 'p')
 			{
