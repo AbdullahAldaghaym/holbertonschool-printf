@@ -6,6 +6,7 @@
 char output_buf[1024];
 int buf_index = 0;
 
+/* Buffer Management */
 int putchar_buffer(char c)
 {
 	output_buf[buf_index++] = c;
@@ -31,6 +32,7 @@ int _putchar(char c)
 	return (putchar_buffer(c));
 }
 
+/* Format Parsing */
 int get_flags(const char *format, int *i)
 {
     int flags = 0;
@@ -100,7 +102,7 @@ int get_width(const char *format, int *i, va_list args)
     return width;
 }
 
-/* Helper function to calculate number length for width calculation */
+/* Helper functions for length calculation */
 int calculate_number_length(int n, int flags)
 {
     int length = 0;
@@ -111,14 +113,14 @@ int calculate_number_length(int n, int flags)
     
     if (n < 0)
     {
-        length++; /* for minus sign */
+        length++;
         num = (n == -2147483648) ? 2147483648U : (unsigned int)(-n);
     }
     else
     {
         num = n;
         if (flags & FLAG_PLUS || flags & FLAG_SPACE)
-            length++; /* for plus/space */
+            length++;
     }
     
     while (num > 0)
@@ -151,7 +153,7 @@ int calculate_octal_length(unsigned int n, int flags)
 {
     int length = calculate_unsigned_length(n, 8);
     if ((flags & FLAG_HASH) && n != 0)
-        length++; /* for the extra '0' */
+        length++;
     return length;
 }
 
@@ -159,7 +161,7 @@ int calculate_hex_length(unsigned int n, int flags)
 {
     int length = calculate_unsigned_length(n, 16);
     if ((flags & FLAG_HASH) && n != 0)
-        length += 2; /* for '0x' or '0X' */
+        length += 2;
     return length;
 }
 
@@ -172,8 +174,384 @@ void print_padding(int width, int *count)
     }
 }
 
-/* Updated functions with width support */
+/* Basic Number Printing Functions (used by width functions) */
+void print_number_int(unsigned int num, int *count)
+{
+    if (num / 10)
+        print_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
+}
 
+void print_long_number_int(unsigned long num, int *count)
+{
+    if (num / 10)
+        print_long_number_int(num / 10, count);
+    *count += _putchar((num % 10) + '0');
+}
+
+void print_number(int n, int *count, int flags)
+{
+	unsigned int num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		if (n == -2147483648)
+			num = 2147483648U;
+		else
+			num = (unsigned int)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+void print_long_number(long n, int *count, int flags)
+{
+	unsigned long num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		if (n == -9223372036854775807L-1)
+			num = (unsigned long)9223372036854775807UL + 1;
+		else
+			num = (unsigned long)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_long_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+void print_short_number(short n, int *count, int flags)
+{
+	unsigned short num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		num = (unsigned short)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+int print_unsigned(unsigned int n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 10)
+        count += print_unsigned(n / 10);
+
+    count += _putchar((n % 10) + '0');
+    return count;
+}
+
+int print_long_unsigned(unsigned long n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 10)
+        count += print_long_unsigned(n / 10);
+
+    count += _putchar((n % 10) + '0');
+    return count;
+}
+
+int print_short_unsigned(unsigned short n)
+{
+    return print_unsigned((unsigned int)n);
+}
+
+int print_octal(unsigned int n, int flags)
+{
+    int count = 0;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        count += _putchar('0');
+
+    if (n / 8)
+        count += print_octal(n / 8, 0);
+
+    count += _putchar((n % 8) + '0');
+    return count;
+}
+
+int print_long_octal(unsigned long n, int flags)
+{
+    int count = 0;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        count += _putchar('0');
+
+    if (n / 8)
+        count += print_long_octal(n / 8, 0);
+
+    count += _putchar((n % 8) + '0');
+    return count;
+}
+
+int print_short_octal(unsigned short n, int flags)
+{
+    return print_octal((unsigned int)n, flags);
+}
+
+int print_hex(unsigned int n, int uppercase, int flags)
+{
+    int count = 0;
+    char *digits;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    if (n / 16)
+        count += print_hex(n / 16, uppercase, 0);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
+
+int print_long_hex(unsigned long n, int uppercase, int flags)
+{
+    int count = 0;
+    char *digits;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    if (n / 16)
+        count += print_long_hex(n / 16, uppercase, 0);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
+
+int print_short_hex(unsigned short n, int uppercase, int flags)
+{
+    return print_hex((unsigned int)n, uppercase, flags);
+}
+
+int print_binary(unsigned int n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 2)
+        count += print_binary(n / 2);
+
+    count += _putchar((n % 2) + '0');
+    return count;
+}
+
+int print_custom_string(va_list args)
+{
+    char *str = va_arg(args, char *);
+    int count = 0;
+    unsigned char c;
+
+    if (str == NULL)
+        str = "(null)";
+
+    while (*str)
+    {
+        c = (unsigned char)*str;
+        
+        if (c < 32 || c >= 127)
+        {
+            count += _putchar('\\');
+            count += _putchar('x');
+            
+            if (c / 16 < 10)
+                count += _putchar((c / 16) + '0');
+            else
+                count += _putchar((c / 16) - 10 + 'A');
+            
+            if (c % 16 < 10)
+                count += _putchar((c % 16) + '0');
+            else
+                count += _putchar((c % 16) - 10 + 'A');
+        }
+        else
+        {
+            count += _putchar(c);
+        }
+        str++;
+    }
+    return count;
+}
+
+int print_pointer(va_list args)
+{
+    void *ptr = va_arg(args, void *);
+    unsigned long address = (unsigned long)ptr;
+    int count = 0;
+    
+    if (ptr == NULL)
+    {
+        return (_printf("(nil)"));
+    }
+    
+    count += _putchar('0');
+    count += _putchar('x');
+    count += print_hex_long(address, 0);
+    return count;
+}
+
+int print_hex_long(unsigned long n, int uppercase)
+{
+    int count = 0;
+    char *digits;
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n / 16)
+        count += print_hex_long(n / 16, uppercase);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
+
+/* Width Handling Functions */
 int print_char_with_width(char c, int width)
 {
     int count = 0;
@@ -222,8 +600,6 @@ int print_percent_with_width(int width)
     count += _putchar('%');
     return count;
 }
-
-/* Number functions with width support */
 
 void print_number_with_width(int n, int *count, int flags, int width)
 {
@@ -294,8 +670,6 @@ void print_short_number_with_width(short n, int *count, int flags, int width)
     print_number_with_width((int)n, count, flags, width);
 }
 
-/* Unsigned functions with width support */
-
 int print_unsigned_with_width(unsigned int n, int width)
 {
     int count = 0;
@@ -336,8 +710,6 @@ int print_short_unsigned_with_width(unsigned short n, int width)
 {
     return print_unsigned_with_width((unsigned int)n, width);
 }
-
-/* Octal functions with width support */
 
 int print_octal_with_width(unsigned int n, int flags, int width)
 {
@@ -383,8 +755,6 @@ int print_short_octal_with_width(unsigned short n, int flags, int width)
     return print_octal_with_width((unsigned int)n, flags, width);
 }
 
-/* Hex functions with width support */
-
 int print_hex_with_width(unsigned int n, int uppercase, int flags, int width)
 {
     int count = 0;
@@ -429,8 +799,6 @@ int print_short_hex_with_width(unsigned short n, int uppercase, int flags, int w
     return print_hex_with_width((unsigned int)n, uppercase, flags, width);
 }
 
-/* Binary with width support */
-
 int print_binary_with_width(unsigned int n, int width)
 {
     int count = 0;
@@ -442,8 +810,6 @@ int print_binary_with_width(unsigned int n, int width)
     count += print_binary(n);
     return count;
 }
-
-/* Pointer with width support */
 
 int print_pointer_with_width(va_list args, int width)
 {
@@ -484,8 +850,6 @@ int print_pointer_with_width(va_list args, int width)
     return count;
 }
 
-/* Custom string with width support */
-
 int print_custom_string_with_width(va_list args, int width)
 {
     int count = 0;
@@ -515,13 +879,7 @@ int print_custom_string_with_width(va_list args, int width)
     return count;
 }
 
-/* Keep your existing number printing functions as they are */
-/* [All your existing print_number, print_long_number, etc. functions remain here] */
-/* [All your existing print_unsigned, print_octal, print_hex, etc. functions remain here] */
-/* [All your existing print_custom_string, print_pointer, etc. functions remain here] */
-
-/* Updated _printf function with complete width support */
-
+/* Main _printf function */
 int _printf(const char *format, ...)
 {
 	va_list args;
