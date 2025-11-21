@@ -691,7 +691,7 @@ int print_octal_with_precision(unsigned int n, int precision, int flags)
 {
 	int count = 0;
 	int num_len = calculate_unsigned_length(n, 8);
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 
 	if (n == 0 && precision == 0)
 	{
@@ -716,7 +716,7 @@ int print_hex_with_precision(unsigned int n, int precision, int flags, int upper
 {
 	int count = 0;
 	int num_len = calculate_unsigned_length(n, 16);
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 
 	if (n == 0 && precision == 0)
 	return count;
@@ -753,7 +753,7 @@ int print_string_with_precision(char *str, int precision)
 	return count;
 }
 
-/* Combined Width and Precision Handling with Zero Flag */
+/* Combined Width and Precision Handling with Left Alignment Support */
 
 int print_char_with_width_precision(char c, int width, int precision, int flags)
 {
@@ -762,13 +762,22 @@ int print_char_with_width_precision(char c, int width, int precision, int flags)
 
 	(void)precision;
 
-	if (!(flags & FLAG_MINUS) && width > 1)
-	print_padding(width - 1, pad_char, &count);
-
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: char first, then padding */
 	count += _putchar(c);
-
-	if (flags & FLAG_MINUS && width > 1)
+	
+	if (width > 1)
 	print_padding(width - 1, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then char */
+	if (width > 1)
+	print_padding(width - 1, pad_char, &count);
+	
+	count += _putchar(c);
+	}
 
 	return count;
 }
@@ -790,13 +799,22 @@ int print_string_with_width_precision(char *str, int width, int precision, int f
 	temp++;
 	}
 
-	if (!(flags & FLAG_MINUS) && width > len)
-	print_padding(width - len, pad_char, &count);
-
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: string first, then padding */
 	count += print_string_with_precision(str, precision);
-
-	if (flags & FLAG_MINUS && width > len)
+	
+	if (width > len)
 	print_padding(width - len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then string */
+	if (width > len)
+	print_padding(width - len, pad_char, &count);
+	
+	count += print_string_with_precision(str, precision);
+	}
 
 	return count;
 }
@@ -806,113 +824,181 @@ int print_percent_with_width(int width, int flags)
 	int count = 0;
 	char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
 
-	if (!(flags & FLAG_MINUS) && width > 1)
-	print_padding(width - 1, pad_char, &count);
-
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: % first, then padding */
 	count += _putchar('%');
-
-	if (flags & FLAG_MINUS && width > 1)
+	
+	if (width > 1)
 	print_padding(width - 1, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then % */
+	if (width > 1)
+	print_padding(width - 1, pad_char, &count);
+	
+	count += _putchar('%');
+	}
 
 	return count;
 }
 
-/* Integer with width, precision and zero flag - FIXED VERSION */
+/* Integer with width, precision and flags (including left alignment) */
 void print_number_with_width_precision(int n, int *count, int width, int precision, int flags)
 {
-    int total_len = 0;
-    int num_len = 0;
-    unsigned int num;
-    int is_negative = 0;
-    char pad_char = ' ';
-    unsigned int temp;
-    int sign_len = 0;
+	char buffer[32];
+	int idx = 0, is_negative = 0;
+	unsigned int num;
+	int total_len, num_len, i;
+	int sign_printed = 0;
+	char pad_char = ' ';
 
-    if (n == 0 && precision == 0)
-    {
-        if (width > 0)
-            print_padding(width, ' ', count);
-        return;
-    }
+	/* Handle zero precision with zero value */
+	if (n == 0 && precision == 0)
+	{
+	if (width > 0)
+	print_padding(width, ' ', count);
+	return;
+	}
 
-    /* Calculate lengths */
-    if (n < 0)
-    {
-        is_negative = 1;
-        sign_len = 1;
-        if (n == -2147483648)
-            num = 2147483648U;
-        else
-            num = (unsigned int)(-n);
-    }
-    else
-    {
-        num = n;
-        if (flags & FLAG_PLUS)
-            sign_len = 1;
-        else if (flags & FLAG_SPACE)
-            sign_len = 1;
-    }
+	/* Handle negative numbers */
+	if (n < 0)
+	{
+	is_negative = 1;
+	if (n == -2147483648)
+	num = 2147483648U;
+	else
+	num = (unsigned int)(-n);
+	}
+	else
+	{
+	num = n;
+	}
 
-    temp = num;
-    do {
-        num_len++;
-        temp /= 10;
-    } while (temp > 0);
+	/* Convert number to string in reverse */
+	if (num == 0)
+	{
+	buffer[idx++] = '0';
+	}
+	else
+	{
+	while (num)
+	{
+	buffer[idx++] = (num % 10) + '0';
+	num /= 10;
+	}
+	}
+	num_len = idx;
 
-    if (num == 0 && precision != 0)
-        num_len = 1;
+	/* Calculate total length */
+	total_len = (precision > num_len) ? precision : num_len;
+	if (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE))
+	total_len++;
 
-    total_len = (precision > num_len) ? precision : num_len;
-    total_len += sign_len;
+	/* Determine padding character */
+	/* Zero flag is ignored when left alignment is specified or precision is specified */
+	if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
+	pad_char = '0';
 
-    /* Determine padding character - zero flag only applies when no precision and no left alignment */
-    if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
-        pad_char = '0';
+	/* LEFT ALIGNMENT HANDLING */
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: content first, then padding */
+	
+	/* Print sign */
+	if (is_negative)
+	{
+	*count += _putchar('-');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_PLUS)
+	{
+	*count += _putchar('+');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_SPACE)
+	{
+	*count += _putchar(' ');
+	sign_printed = 1;
+	}
 
-    /* Handle the special case where we need to print sign before zeros */
-    if (pad_char == '0' && (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE)))
-    {
-        /* Print sign first when using zero padding */
-        if (is_negative)
-            *count += _putchar('-');
-        else if (flags & FLAG_PLUS)
-            *count += _putchar('+');
-        else if (flags & FLAG_SPACE)
-            *count += _putchar(' ');
-    }
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, count);
 
-    /* Left padding */
-    if (!(flags & FLAG_MINUS) && width > total_len)
-        print_padding(width - total_len, pad_char, count);
+	/* Print the number digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	*count += _putchar(buffer[i]);
+	}
 
-    /* Print sign if not already printed (for space padding) */
-    if (pad_char != '0' && (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE)))
-    {
-        if (is_negative)
-            *count += _putchar('-');
-        else if (flags & FLAG_PLUS)
-            *count += _putchar('+');
-        else if (flags & FLAG_SPACE)
-            *count += _putchar(' ');
-    }
+	/* Right padding for left alignment */
+	if (width > total_len)
+	print_padding(width - total_len, ' ', count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then content */
+	
+	/* Handle zero padding with sign */
+	if (pad_char == '0')
+	{
+	/* Print sign first with zero padding */
+	if (is_negative)
+	{
+	*count += _putchar('-');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_PLUS)
+	{
+	*count += _putchar('+');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_SPACE)
+	{
+	*count += _putchar(' ');
+	sign_printed = 1;
+	}
+	
+	/* Then padding */
+	if (width > total_len)
+	print_padding(width - total_len, pad_char, count);
+	}
+	else
+	{
+	/* Space padding - padding first, then sign */
+	if (width > total_len)
+	print_padding(width - total_len, pad_char, count);
+	
+	/* Then sign */
+	if (is_negative)
+	{
+	*count += _putchar('-');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_PLUS)
+	{
+	*count += _putchar('+');
+	sign_printed = 1;
+	}
+	else if (flags & FLAG_SPACE)
+	{
+	*count += _putchar(' ');
+	sign_printed = 1;
+	}
+	}
 
-    /* Zero padding for precision */
-    if (precision > num_len)
-        print_zero_padding(precision - num_len, count);
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, count);
 
-    /* Print number */
-    if (num == 0 && precision != 0)
-        *count += _putchar('0');
-    else if (num / 10)
-        print_number_int(num / 10, count);
-    
-    if (num != 0)
-        *count += _putchar((num % 10) + '0');
-
-    /* Right padding */
-    if (flags & FLAG_MINUS && width > total_len)
-        print_padding(width - total_len, ' ', count);
+	/* Print the number digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	*count += _putchar(buffer[i]);
+	}
+	}
 }
 
 /* Similar functions for long and short versions */
@@ -926,14 +1012,15 @@ void print_short_number_with_width_precision(short n, int *count, int width, int
 	print_number_with_width_precision((int)n, count, width, precision, flags);
 }
 
-/* Unsigned with width, precision and zero flag */
+/* Unsigned with width, precision and flags */
 int print_unsigned_with_width_precision(unsigned int n, int width, int precision, int flags)
 {
 	int count = 0;
-	int num_len = calculate_unsigned_length(n, 10);
-	int total_len = (precision > num_len) ? precision : num_len;
+	char buffer[32];
+	int idx = 0, num_len, total_len, i;
 	char pad_char = ' ';
 
+	/* Handle zero precision with zero value */
 	if (n == 0 && precision == 0)
 	{
 	if (width > 0)
@@ -941,17 +1028,63 @@ int print_unsigned_with_width_precision(unsigned int n, int width, int precision
 	return count;
 	}
 
-	/* Zero flag only applies when no precision and no left alignment */
+	/* Convert number to string */
+	if (n == 0)
+	{
+	buffer[idx++] = '0';
+	}
+	else
+	{
+	while (n)
+	{
+	buffer[idx++] = (n % 10) + '0';
+	n /= 10;
+	}
+	}
+	num_len = idx;
+
+	total_len = (precision > num_len) ? precision : num_len;
+
+	/* Determine padding character */
 	if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
 	pad_char = '0';
 
-	if (!(flags & FLAG_MINUS) && width > total_len)
+	/* LEFT ALIGNMENT HANDLING */
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: content first */
+	
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, &count);
+
+	/* Print number */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
+
+	/* Right padding */
+	if (width > total_len)
+	print_padding(width - total_len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first */
+	
+	if (width > total_len)
 	print_padding(width - total_len, pad_char, &count);
 
-	count += print_unsigned_with_precision(n, precision, flags);
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, &count);
 
-	if (flags & FLAG_MINUS && width > total_len)
-	print_padding(width - total_len, ' ', &count);
+	/* Print number */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
+	}
 
 	return count;
 }
@@ -1004,15 +1137,16 @@ int print_short_unsigned_with_width_precision(unsigned short n, int width, int p
 	return print_unsigned_with_width_precision((unsigned int)n, width, precision, flags);
 }
 
-/* Octal with width, precision and zero flag */
+/* Octal with width, precision and flags */
 int print_octal_with_width_precision(unsigned int n, int width, int precision, int flags)
 {
 	int count = 0;
-	int num_len = calculate_unsigned_length(n, 8);
-	int total_len = (precision > num_len) ? precision : num_len;
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	char buffer[32];
+	int idx = 0, num_len, total_len, i;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 	char pad_char = ' ';
 
+	/* Handle zero precision with zero value */
 	if (n == 0 && precision == 0)
 	{
 	if (has_hash && width > 1)
@@ -1024,16 +1158,35 @@ int print_octal_with_width_precision(unsigned int n, int width, int precision, i
 	return count;
 	}
 
+	/* Convert number to octal string */
+	if (n == 0)
+	{
+	buffer[idx++] = '0';
+	}
+	else
+	{
+	while (n)
+	{
+	buffer[idx++] = (n % 8) + '0';
+	n /= 8;
+	}
+	}
+	num_len = idx;
+
+	total_len = (precision > num_len) ? precision : num_len;
 	if (has_hash)
 	total_len++;
 
-	/* Zero flag only applies when no precision and no left alignment */
+	/* Determine padding character */
 	if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
 	pad_char = '0';
 
-	if (!(flags & FLAG_MINUS) && width > total_len)
-	print_padding(width - total_len, pad_char, &count);
-
+	/* LEFT ALIGNMENT HANDLING */
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: content first */
+	
+	/* Print hash prefix */
 	if (has_hash)
 	count += _putchar('0');
 
@@ -1041,10 +1194,37 @@ int print_octal_with_width_precision(unsigned int n, int width, int precision, i
 	if (precision > num_len)
 	print_zero_padding(precision - num_len, &count);
 
-	count += print_octal(n, 0);
+	/* Print octal digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
 
-	if (flags & FLAG_MINUS && width > total_len)
+	/* Right padding */
+	if (width > total_len)
 	print_padding(width - total_len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first */
+	
+	if (width > total_len)
+	print_padding(width - total_len, pad_char, &count);
+
+	/* Print hash prefix */
+	if (has_hash)
+	count += _putchar('0');
+
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, &count);
+
+	/* Print octal digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
+	}
 
 	return count;
 }
@@ -1056,7 +1236,7 @@ int print_long_octal_with_width_precision(unsigned long n, int width, int precis
 	int num_len = 0;
 	unsigned long temp = n;
 	int total_len;
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 	char pad_char = ' ';
 
 	if (n == 0 && precision == 0)
@@ -1108,15 +1288,17 @@ int print_short_octal_with_width_precision(unsigned short n, int width, int prec
 	return print_octal_with_width_precision((unsigned int)n, width, precision, flags);
 }
 
-/* Hex with width, precision and zero flag */
+/* Hex with width, precision and flags */
 int print_hex_with_width_precision(unsigned int n, int width, int precision, int flags, int uppercase)
 {
 	int count = 0;
-	int num_len = calculate_unsigned_length(n, 16);
-	int total_len = (precision > num_len) ? precision : num_len;
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	char buffer[32];
+	int idx = 0, num_len, total_len, i;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 	char pad_char = ' ';
+	char *digits = uppercase ? "0123456789ABCDEF" : "0123456789abcdef";
 
+	/* Handle zero precision with zero value */
 	if (n == 0 && precision == 0)
 	{
 	if (width > 0)
@@ -1124,17 +1306,35 @@ int print_hex_with_width_precision(unsigned int n, int width, int precision, int
 	return count;
 	}
 
+	/* Convert number to hex string */
+	if (n == 0)
+	{
+	buffer[idx++] = '0';
+	}
+	else
+	{
+	while (n)
+	{
+	buffer[idx++] = digits[n % 16];
+	n /= 16;
+	}
+	}
+	num_len = idx;
+
+	total_len = (precision > num_len) ? precision : num_len;
 	if (has_hash)
 	total_len += 2;
 
-	/* Zero flag only applies when no precision and no left alignment */
+	/* Determine padding character */
 	if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
 	pad_char = '0';
 
-	if (!(flags & FLAG_MINUS) && width > total_len)
-	print_padding(width - total_len, pad_char, &count);
-
-	/* With zero padding, hash prefix comes before zeros */
+	/* LEFT ALIGNMENT HANDLING */
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: content first */
+	
+	/* Print hash prefix */
 	if (has_hash)
 	{
 	count += _putchar('0');
@@ -1145,10 +1345,54 @@ int print_hex_with_width_precision(unsigned int n, int width, int precision, int
 	if (precision > num_len)
 	print_zero_padding(precision - num_len, &count);
 
-	count += print_hex(n, uppercase, 0);
+	/* Print hex digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
 
-	if (flags & FLAG_MINUS && width > total_len)
+	/* Right padding */
+	if (width > total_len)
 	print_padding(width - total_len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first */
+	
+	/* Handle zero padding with hash prefix */
+	if (pad_char == '0' && has_hash)
+	{
+	/* Print hash prefix first with zero padding */
+	count += _putchar('0');
+	count += _putchar(uppercase ? 'X' : 'x');
+	
+	if (width > total_len)
+	print_padding(width - total_len, pad_char, &count);
+	}
+	else
+	{
+	/* Space padding - padding first */
+	if (width > total_len)
+	print_padding(width - total_len, pad_char, &count);
+	
+	/* Then hash prefix */
+	if (has_hash)
+	{
+	count += _putchar('0');
+	count += _putchar(uppercase ? 'X' : 'x');
+	}
+	}
+
+	/* Zero padding for precision */
+	if (precision > num_len)
+	print_zero_padding(precision - num_len, &count);
+
+	/* Print hex digits */
+	for (i = idx - 1; i >= 0; i--)
+	{
+	count += _putchar(buffer[i]);
+	}
+	}
 
 	return count;
 }
@@ -1160,7 +1404,7 @@ int print_long_hex_with_width_precision(unsigned long n, int width, int precisio
 	int num_len = 0;
 	unsigned long temp = n;
 	int total_len;
-	int has_hash = (flags & FLAG_HASH) && n != 0;
+	int has_hash = (flags & FLAG_HASH) && (n != 0);
 	char pad_char = ' ';
 
 	(void)uppercase;
@@ -1220,13 +1464,22 @@ int print_binary_with_width(unsigned int n, int width, int flags)
 	int len = calculate_unsigned_length(n, 2);
 	char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
 
-	if (!(flags & FLAG_MINUS) && width > len)
-	print_padding(width - len, pad_char, &count);
-
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: binary first, then padding */
 	count += print_binary(n);
-
-	if (flags & FLAG_MINUS && width > len)
+	
+	if (width > len)
 	print_padding(width - len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then binary */
+	if (width > len)
+	print_padding(width - len, pad_char, &count);
+	
+	count += print_binary(n);
+	}
 
 	return count;
 }
@@ -1243,13 +1496,22 @@ int print_pointer_with_width_precision(void *ptr, int width, int precision, int 
 	int len = 5;
 	char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
 	
-	if (!(flags & FLAG_MINUS) && width > len)
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: (nil) first, then padding */
+	count += _printf("(nil)");
+	
+	if (width > len)
+	print_padding(width - len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then (nil) */
+	if (width > len)
 	print_padding(width - len, pad_char, &count);
 	
 	count += _printf("(nil)");
-	
-	if (flags & FLAG_MINUS && width > len)
-	print_padding(width - len, ' ', &count);
+	}
 	}
 	else
 	{
@@ -1269,15 +1531,26 @@ int print_pointer_with_width_precision(void *ptr, int width, int precision, int 
 	}
 	}
 	
-	if (!(flags & FLAG_MINUS) && width > len)
+	if (flags & FLAG_MINUS)
+	{
+	/* Left alignment: pointer first, then padding */
+	count += _putchar('0');
+	count += _putchar('x');
+	count += print_hex_long(address, 0);
+	
+	if (width > len)
+	print_padding(width - len, ' ', &count);
+	}
+	else
+	{
+	/* Right alignment: padding first, then pointer */
+	if (width > len)
 	print_padding(width - len, pad_char, &count);
 	
 	count += _putchar('0');
 	count += _putchar('x');
 	count += print_hex_long(address, 0);
-	
-	if (flags & FLAG_MINUS && width > len)
-	print_padding(width - len, ' ', &count);
+	}
 	}
 	
 	return count;
@@ -1332,7 +1605,7 @@ int _printf(const char *format, ...)
 				return (-1);
 			}
 			
-			/* Handle all conversion specifiers with width and precision */
+			/* Handle all conversion specifiers with width, precision and flags */
 			if (format[i] == 'c')
 			{
 				count += print_char_with_width_precision(va_arg(args, int), width, precision, flags);
