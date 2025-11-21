@@ -137,7 +137,6 @@ int get_precision(const char *format, int *i, va_list args)
             precision = va_arg(args, int);
             (*i)++;
         }
-        /* If just '.' without number, precision is 0 */
         else
         {
             precision = 0;
@@ -284,11 +283,322 @@ void print_number(int n, int *count, int flags)
 	*count += _putchar((num % 10) + '0');
 }
 
-/* ... (Keep all your existing basic printing functions the same) ... */
-/* print_long_number, print_short_number, print_unsigned, print_long_unsigned, */
-/* print_short_unsigned, print_octal, print_long_octal, print_short_octal, */
-/* print_hex, print_long_hex, print_short_hex, print_binary, */
-/* print_custom_string, print_pointer, print_hex_long */
+void print_long_number(long n, int *count, int flags)
+{
+	unsigned long num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		if (n == -9223372036854775807L-1)
+			num = (unsigned long)9223372036854775807UL + 1;
+		else
+			num = (unsigned long)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_long_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+void print_short_number(short n, int *count, int flags)
+{
+	unsigned short num;
+	int is_negative = 0;
+
+	if (n == 0)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+		*count += _putchar('0');
+		return;
+	}
+
+	if (n < 0)
+	{
+		is_negative = 1;
+		num = (unsigned short)(-n);
+	}
+	else
+	{
+		num = n;
+	}
+
+	if (!is_negative)
+	{
+		if (flags & FLAG_PLUS)
+			*count += _putchar('+');
+		else if (flags & FLAG_SPACE)
+			*count += _putchar(' ');
+	}
+
+	if (is_negative)
+		*count += _putchar('-');
+
+	if (num / 10)
+		print_number_int(num / 10, count);
+
+	*count += _putchar((num % 10) + '0');
+}
+
+int print_unsigned(unsigned int n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 10)
+        count += print_unsigned(n / 10);
+
+    count += _putchar((n % 10) + '0');
+    return count;
+}
+
+int print_long_unsigned(unsigned long n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 10)
+        count += print_long_unsigned(n / 10);
+
+    count += _putchar((n % 10) + '0');
+    return count;
+}
+
+int print_short_unsigned(unsigned short n)
+{
+    return print_unsigned((unsigned int)n);
+}
+
+int print_octal(unsigned int n, int flags)
+{
+    int count = 0;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        count += _putchar('0');
+
+    if (n / 8)
+        count += print_octal(n / 8, 0);
+
+    count += _putchar((n % 8) + '0');
+    return count;
+}
+
+int print_long_octal(unsigned long n, int flags)
+{
+    int count = 0;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        count += _putchar('0');
+
+    if (n / 8)
+        count += print_long_octal(n / 8, 0);
+
+    count += _putchar((n % 8) + '0');
+    return count;
+}
+
+int print_short_octal(unsigned short n, int flags)
+{
+    return print_octal((unsigned int)n, flags);
+}
+
+int print_hex(unsigned int n, int uppercase, int flags)
+{
+    int count = 0;
+    char *digits;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    if (n / 16)
+        count += print_hex(n / 16, uppercase, 0);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
+
+int print_long_hex(unsigned long n, int uppercase, int flags)
+{
+    int count = 0;
+    char *digits;
+    int has_hash = (flags & FLAG_HASH) && (n != 0);
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n == 0)
+    {
+        count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    if (n / 16)
+        count += print_long_hex(n / 16, uppercase, 0);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
+
+int print_short_hex(unsigned short n, int uppercase, int flags)
+{
+    return print_hex((unsigned int)n, uppercase, flags);
+}
+
+int print_binary(unsigned int n)
+{
+    int count = 0;
+
+    if (n == 0)
+        return _putchar('0');
+
+    if (n / 2)
+        count += print_binary(n / 2);
+
+    count += _putchar((n % 2) + '0');
+    return count;
+}
+
+int print_custom_string(va_list args)
+{
+    char *str = va_arg(args, char *);
+    int count = 0;
+    unsigned char c;
+
+    if (str == NULL)
+        str = "(null)";
+
+    while (*str)
+    {
+        c = (unsigned char)*str;
+        
+        if (c < 32 || c >= 127)
+        {
+            count += _putchar('\\');
+            count += _putchar('x');
+            
+            if (c / 16 < 10)
+                count += _putchar((c / 16) + '0');
+            else
+                count += _putchar((c / 16) - 10 + 'A');
+            
+            if (c % 16 < 10)
+                count += _putchar((c % 16) + '0');
+            else
+                count += _putchar((c % 16) - 10 + 'A');
+        }
+        else
+        {
+            count += _putchar(c);
+        }
+        str++;
+    }
+    return count;
+}
+
+int print_pointer(va_list args)
+{
+    void *ptr = va_arg(args, void *);
+    unsigned long address = (unsigned long)ptr;
+    int count = 0;
+    
+    if (ptr == NULL)
+    {
+        return (_printf("(nil)"));
+    }
+    
+    count += _putchar('0');
+    count += _putchar('x');
+    count += print_hex_long(address, 0);
+    return count;
+}
+
+int print_hex_long(unsigned long n, int uppercase)
+{
+    int count = 0;
+    char *digits;
+
+    if (uppercase)
+        digits = "0123456789ABCDEF";
+    else
+        digits = "0123456789abcdef";
+
+    if (n / 16)
+        count += print_hex_long(n / 16, uppercase);
+
+    count += _putchar(digits[n % 16]);
+    return count;
+}
 
 /* Precision Handling Functions */
 
@@ -351,6 +661,8 @@ int print_unsigned_with_precision(unsigned int n, int precision, int flags)
     int count = 0;
     int num_len = 0;
     unsigned int temp = n;
+
+    (void)flags;
 
     if (n == 0 && precision == 0)
         return 0;
@@ -448,7 +760,7 @@ int print_char_with_width_precision(char c, int width, int precision, int flags)
     int count = 0;
     char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
 
-    (void)precision; /* Precision not used for chars */
+    (void)precision;
 
     if (!(flags & FLAG_MINUS) && width > 1)
         print_padding(width - 1, pad_char, &count);
@@ -622,131 +934,226 @@ int print_unsigned_with_width_precision(unsigned int n, int width, int precision
     return count;
 }
 
-/* Update your _printf function to use precision */
-
-int _printf(const char *format, ...)
+/* Long unsigned with width and precision */
+int print_long_unsigned_with_width_precision(unsigned long n, int width, int precision, int flags)
 {
-	va_list args;
-	int i = 0, count = 0;
-	int flags, length, width, precision;
+    int count = 0;
+    int num_len = 0;
+    unsigned long temp = n;
+    int total_len;
+    char pad_char = ' ';
 
-	if (format == NULL)
-		return (-1);
+    (void)flags;
 
-	buf_index = 0;
-	va_start(args, format);
+    if (n == 0 && precision == 0)
+    {
+        if (width > 0)
+            print_padding(width, ' ', &count);
+        return count;
+    }
 
-	while (format[i] != '\0')
-	{
-		if (format[i] == '%')
-		{
-			i++;
-			if (format[i] == '\0')
-			{
-				flush_buffer();
-				va_end(args);
-				return (-1);
-			}
+    /* Calculate length */
+    do {
+        num_len++;
+        temp /= 10;
+    } while (temp > 0);
+    if (n == 0) num_len = 1;
 
-			flags = get_flags(format, &i);
-			width = get_width(format, &i, args);
-			precision = get_precision(format, &i, args);
-			length = get_length(format, &i);
-			
-			if (format[i] == '\0')
-			{
-				flush_buffer();
-				va_end(args);
-				return (-1);
-			}
-			
-			/* Handle all conversion specifiers with width and precision */
-			if (format[i] == 'c')
-			{
-				count += print_char_with_width_precision(va_arg(args, int), width, precision, flags);
-			}
-			else if (format[i] == 's')
-			{
-				char *str = va_arg(args, char *);
-				count += print_string_with_width_precision(str, width, precision, flags);
-			}
-			else if (format[i] == 'S')
-			{
-				/* Custom string handling with precision */
-				char *str = va_arg(args, char *);
-				count += print_string_with_width_precision(str, width, precision, flags);
-			}
-			else if (format[i] == 'd' || format[i] == 'i')
-			{
-				if (length == LENGTH_L)
-					print_long_number_with_width_precision(va_arg(args, long), &count, width, precision, flags);
-				else if (length == LENGTH_H)
-					print_short_number_with_width_precision((short)va_arg(args, int), &count, width, precision, flags);
-				else
-					print_number_with_width_precision(va_arg(args, int), &count, width, precision, flags);
-			}
-			else if (format[i] == 'u')
-			{
-				if (length == LENGTH_L)
-					count += print_long_unsigned_with_width_precision(va_arg(args, unsigned long), width, precision, flags);
-				else if (length == LENGTH_H)
-					count += print_short_unsigned_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags);
-				else
-					count += print_unsigned_with_width_precision(va_arg(args, unsigned int), width, precision, flags);
-			}
-			else if (format[i] == 'o')
-			{
-				if (length == LENGTH_L)
-					count += print_long_octal_with_width_precision(va_arg(args, unsigned long), width, precision, flags);
-				else if (length == LENGTH_H)
-					count += print_short_octal_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags);
-				else
-					count += print_octal_with_width_precision(va_arg(args, unsigned int), width, precision, flags);
-			}
-			else if (format[i] == 'x')
-			{
-				if (length == LENGTH_L)
-					count += print_long_hex_with_width_precision(va_arg(args, unsigned long), width, precision, flags, 0);
-				else if (length == LENGTH_H)
-					count += print_short_hex_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags, 0);
-				else
-					count += print_hex_with_width_precision(va_arg(args, unsigned int), width, precision, flags, 0);
-			}
-			else if (format[i] == 'X')
-			{
-				if (length == LENGTH_L)
-					count += print_long_hex_with_width_precision(va_arg(args, unsigned long), width, precision, flags, 1);
-				else if (length == LENGTH_H)
-					count += print_short_hex_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags, 1);
-				else
-					count += print_hex_with_width_precision(va_arg(args, unsigned int), width, precision, flags, 1);
-			}
-			else if (format[i] == 'b')
-			{
-				count += print_binary_with_width(va_arg(args, unsigned int), width, flags);
-			}
-			else if (format[i] == 'p')
-			{
-				count += print_pointer_with_width_precision(va_arg(args, void*), width, precision, flags);
-			}
-			else if (format[i] == '%')
-			{
-				count += print_percent_with_width(width, flags);
-			}
-			else
-			{
-				count += _putchar('%');
-				count += _putchar(format[i]);
-			}
-		}
-		else
-		{
-			count += _putchar(format[i]);
-		}
-		i++;
-	}
+    total_len = (precision > num_len) ? precision : num_len;
 
-	flush_buffer();
-	va_end(args);
-	return (count);
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, &count);
+
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, &count);
+
+    count += print_long_unsigned(n);
+
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', &count);
+
+    return count;
 }
+
+/* Short unsigned with width and precision */
+int print_short_unsigned_with_width_precision(unsigned short n, int width, int precision, int flags)
+{
+    return print_unsigned_with_width_precision((unsigned int)n, width, precision, flags);
+}
+
+/* Octal with width and precision */
+int print_octal_with_width_precision(unsigned int n, int width, int precision, int flags)
+{
+    int count = 0;
+    int num_len = calculate_unsigned_length(n, 8);
+    int total_len = (precision > num_len) ? precision : num_len;
+    int has_hash = (flags & FLAG_HASH) && n != 0;
+    char pad_char = ' ';
+
+    if (n == 0 && precision == 0)
+    {
+        if (has_hash && width > 1)
+            print_padding(width - 1, ' ', &count);
+        else if (width > 0)
+            print_padding(width, ' ', &count);
+        if (has_hash)
+            count += _putchar('0');
+        return count;
+    }
+
+    if (has_hash)
+        total_len++;
+
+    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) && precision == -1)
+        pad_char = '0';
+
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, &count);
+
+    if (has_hash)
+        count += _putchar('0');
+
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, &count);
+
+    count += print_octal(n, 0);
+
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', &count);
+
+    return count;
+}
+
+/* Long octal with width and precision */
+int print_long_octal_with_width_precision(unsigned long n, int width, int precision, int flags)
+{
+    int count = 0;
+    int num_len = 0;
+    unsigned long temp = n;
+    int total_len;
+    int has_hash = (flags & FLAG_HASH) && n != 0;
+    char pad_char = ' ';
+
+    if (n == 0 && precision == 0)
+    {
+        if (has_hash && width > 1)
+            print_padding(width - 1, ' ', &count);
+        else if (width > 0)
+            print_padding(width, ' ', &count);
+        if (has_hash)
+            count += _putchar('0');
+        return count;
+    }
+
+    /* Calculate length */
+    do {
+        num_len++;
+        temp /= 8;
+    } while (temp > 0);
+    if (n == 0) num_len = 1;
+
+    total_len = (precision > num_len) ? precision : num_len;
+    if (has_hash)
+        total_len++;
+
+    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) && precision == -1)
+        pad_char = '0';
+
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, &count);
+
+    if (has_hash)
+        count += _putchar('0');
+
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, &count);
+
+    count += print_long_octal(n, 0);
+
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', &count);
+
+    return count;
+}
+
+/* Short octal with width and precision */
+int print_short_octal_with_width_precision(unsigned short n, int width, int precision, int flags)
+{
+    return print_octal_with_width_precision((unsigned int)n, width, precision, flags);
+}
+
+/* Hex with width and precision */
+int print_hex_with_width_precision(unsigned int n, int width, int precision, int flags, int uppercase)
+{
+    int count = 0;
+    int num_len = calculate_unsigned_length(n, 16);
+    int total_len = (precision > num_len) ? precision : num_len;
+    int has_hash = (flags & FLAG_HASH) && n != 0;
+    char pad_char = ' ';
+
+    if (n == 0 && precision == 0)
+    {
+        if (width > 0)
+            print_padding(width, ' ', &count);
+        return count;
+    }
+
+    if (has_hash)
+        total_len += 2;
+
+    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) && precision == -1)
+        pad_char = '0';
+
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, &count);
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar(uppercase ? 'X' : 'x');
+    }
+
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, &count);
+
+    count += print_hex(n, uppercase, 0);
+
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', &count);
+
+    return count;
+}
+
+/* Long hex with width and precision */
+int print_long_hex_with_width_precision(unsigned long n, int width, int precision, int flags, int uppercase)
+{
+    int count = 0;
+    int num_len = 0;
+    unsigned long temp = n;
+    int total_len;
+    int has_hash = (flags & FLAG_HASH) && n != 0;
+    char pad_char = ' ';
+
+    if (n == 0 && precision == 0)
+    {
+        if (width > 0)
+            print_padding(width, ' ', &count);
+        return count;
+    }
+
+    /* Calculate length */
+    do {
+        num_len++;
+        temp /= 16;
+    } while (temp > 0);
+    if (n == 0) num_len = 1;
+
+    total_len = (precision > num_len) ? precision : num_len;
+    if (has_hash)
+        total_len += 2;
+
+    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) &&
