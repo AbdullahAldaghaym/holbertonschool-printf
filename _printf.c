@@ -1138,6 +1138,8 @@ int print_long_hex_with_width_precision(unsigned long n, int width, int precisio
     int has_hash = (flags & FLAG_HASH) && n != 0;
     char pad_char = ' ';
 
+    (void)uppercase;
+
     if (n == 0 && precision == 0)
     {
         if (width > 0)
@@ -1156,4 +1158,240 @@ int print_long_hex_with_width_precision(unsigned long n, int width, int precisio
     if (has_hash)
         total_len += 2;
 
-    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) &&
+    if (flags & FLAG_ZERO && !(flags & FLAG_MINUS) && precision == -1)
+        pad_char = '0';
+
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, &count);
+
+    if (has_hash)
+    {
+        count += _putchar('0');
+        count += _putchar('x');
+    }
+
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, &count);
+
+    count += print_long_hex(n, 0, 0);
+
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', &count);
+
+    return count;
+}
+
+/* Short hex with width and precision */
+int print_short_hex_with_width_precision(unsigned short n, int width, int precision, int flags, int uppercase)
+{
+    return print_hex_with_width_precision((unsigned int)n, width, precision, flags, uppercase);
+}
+
+/* Binary with width */
+int print_binary_with_width(unsigned int n, int width, int flags)
+{
+    int count = 0;
+    int len = calculate_unsigned_length(n, 2);
+    char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
+
+    if (!(flags & FLAG_MINUS) && width > len)
+        print_padding(width - len, pad_char, &count);
+
+    count += print_binary(n);
+
+    if (flags & FLAG_MINUS && width > len)
+        print_padding(width - len, ' ', &count);
+
+    return count;
+}
+
+/* Pointer with width and precision */
+int print_pointer_with_width_precision(void *ptr, int width, int precision, int flags)
+{
+    int count = 0;
+    
+    (void)precision;
+    
+    if (ptr == NULL)
+    {
+        int len = 5;
+        char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
+        
+        if (!(flags & FLAG_MINUS) && width > len)
+            print_padding(width - len, pad_char, &count);
+            
+        count += _printf("(nil)");
+        
+        if (flags & FLAG_MINUS && width > len)
+            print_padding(width - len, ' ', &count);
+    }
+    else
+    {
+        unsigned long address = (unsigned long)ptr;
+        int len = 2;
+        unsigned long temp = address;
+        char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
+        
+        if (address == 0)
+            len += 1;
+        else
+        {
+            while (temp > 0)
+            {
+                len++;
+                temp /= 16;
+            }
+        }
+        
+        if (!(flags & FLAG_MINUS) && width > len)
+            print_padding(width - len, pad_char, &count);
+            
+        count += _putchar('0');
+        count += _putchar('x');
+        count += print_hex_long(address, 0);
+        
+        if (flags & FLAG_MINUS && width > len)
+            print_padding(width - len, ' ', &count);
+    }
+    
+    return count;
+}
+
+/* Custom string with width and precision */
+int print_custom_string_with_width_precision(va_list args, int width, int precision, int flags)
+{
+    int count = 0;
+    char *str = va_arg(args, char *);
+    
+    (void)precision;
+    
+    count += print_string_with_width_precision(str, width, -1, flags);
+    return count;
+}
+
+/* Main _printf function */
+int _printf(const char *format, ...)
+{
+	va_list args;
+	int i = 0, count = 0;
+	int flags, length, width, precision;
+
+	if (format == NULL)
+		return (-1);
+
+	buf_index = 0;
+	va_start(args, format);
+
+	while (format[i] != '\0')
+	{
+		if (format[i] == '%')
+		{
+			i++;
+			if (format[i] == '\0')
+			{
+				flush_buffer();
+				va_end(args);
+				return (-1);
+			}
+
+			flags = get_flags(format, &i);
+			width = get_width(format, &i, args);
+			precision = get_precision(format, &i, args);
+			length = get_length(format, &i);
+			
+			if (format[i] == '\0')
+			{
+				flush_buffer();
+				va_end(args);
+				return (-1);
+			}
+			
+			/* Handle all conversion specifiers with width and precision */
+			if (format[i] == 'c')
+			{
+				count += print_char_with_width_precision(va_arg(args, int), width, precision, flags);
+			}
+			else if (format[i] == 's')
+			{
+				char *str = va_arg(args, char *);
+				count += print_string_with_width_precision(str, width, precision, flags);
+			}
+			else if (format[i] == 'S')
+			{
+				count += print_custom_string_with_width_precision(args, width, precision, flags);
+			}
+			else if (format[i] == 'd' || format[i] == 'i')
+			{
+				if (length == LENGTH_L)
+					print_long_number_with_width_precision(va_arg(args, long), &count, width, precision, flags);
+				else if (length == LENGTH_H)
+					print_short_number_with_width_precision((short)va_arg(args, int), &count, width, precision, flags);
+				else
+					print_number_with_width_precision(va_arg(args, int), &count, width, precision, flags);
+			}
+			else if (format[i] == 'u')
+			{
+				if (length == LENGTH_L)
+					count += print_long_unsigned_with_width_precision(va_arg(args, unsigned long), width, precision, flags);
+				else if (length == LENGTH_H)
+					count += print_short_unsigned_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags);
+				else
+					count += print_unsigned_with_width_precision(va_arg(args, unsigned int), width, precision, flags);
+			}
+			else if (format[i] == 'o')
+			{
+				if (length == LENGTH_L)
+					count += print_long_octal_with_width_precision(va_arg(args, unsigned long), width, precision, flags);
+				else if (length == LENGTH_H)
+					count += print_short_octal_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags);
+				else
+					count += print_octal_with_width_precision(va_arg(args, unsigned int), width, precision, flags);
+			}
+			else if (format[i] == 'x')
+			{
+				if (length == LENGTH_L)
+					count += print_long_hex_with_width_precision(va_arg(args, unsigned long), width, precision, flags, 0);
+				else if (length == LENGTH_H)
+					count += print_short_hex_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags, 0);
+				else
+					count += print_hex_with_width_precision(va_arg(args, unsigned int), width, precision, flags, 0);
+			}
+			else if (format[i] == 'X')
+			{
+				if (length == LENGTH_L)
+					count += print_long_hex_with_width_precision(va_arg(args, unsigned long), width, precision, flags, 1);
+				else if (length == LENGTH_H)
+					count += print_short_hex_with_width_precision((unsigned short)va_arg(args, unsigned int), width, precision, flags, 1);
+				else
+					count += print_hex_with_width_precision(va_arg(args, unsigned int), width, precision, flags, 1);
+			}
+			else if (format[i] == 'b')
+			{
+				count += print_binary_with_width(va_arg(args, unsigned int), width, flags);
+			}
+			else if (format[i] == 'p')
+			{
+				count += print_pointer_with_width_precision(va_arg(args, void*), width, precision, flags);
+			}
+			else if (format[i] == '%')
+			{
+				count += print_percent_with_width(width, flags);
+			}
+			else
+			{
+				count += _putchar('%');
+				count += _putchar(format[i]);
+			}
+		}
+		else
+		{
+			count += _putchar(format[i]);
+		}
+		i++;
+	}
+
+	flush_buffer();
+	va_end(args);
+	return (count);
+}
