@@ -817,101 +817,102 @@ int print_percent_with_width(int width, int flags)
 	return count;
 }
 
-/* Integer with width, precision and zero flag */
+/* Integer with width, precision and zero flag - FIXED VERSION */
 void print_number_with_width_precision(int n, int *count, int width, int precision, int flags)
 {
-	int total_len = 0;
-	int num_len = 0;
-	unsigned int num;
-	int is_negative = 0;
-	char pad_char = ' ';
-	unsigned int temp;
-	int sign_len = 0;
+    int total_len = 0;
+    int num_len = 0;
+    unsigned int num;
+    int is_negative = 0;
+    char pad_char = ' ';
+    unsigned int temp;
+    int sign_len = 0;
 
-	if (n == 0 && precision == 0)
-	{
-	if (width > 0)
-	print_padding(width, ' ', count);
-	return;
-	}
+    if (n == 0 && precision == 0)
+    {
+        if (width > 0)
+            print_padding(width, ' ', count);
+        return;
+    }
 
-	/* Calculate lengths */
-	if (n < 0)
-	{
-	is_negative = 1;
-	sign_len = 1;
-	if (n == -2147483648)
-	num = 2147483648U;
-	else
-	num = (unsigned int)(-n);
-	}
-	else
-	{
-	num = n;
-	if (flags & FLAG_PLUS)
-	sign_len = 1;
-	else if (flags & FLAG_SPACE)
-	sign_len = 1;
-	}
+    /* Calculate lengths */
+    if (n < 0)
+    {
+        is_negative = 1;
+        sign_len = 1;
+        if (n == -2147483648)
+            num = 2147483648U;
+        else
+            num = (unsigned int)(-n);
+    }
+    else
+    {
+        num = n;
+        if (flags & FLAG_PLUS)
+            sign_len = 1;
+        else if (flags & FLAG_SPACE)
+            sign_len = 1;
+    }
 
-	temp = num;
-	do {
-	num_len++;
-	temp /= 10;
-	} while (temp > 0);
+    temp = num;
+    do {
+        num_len++;
+        temp /= 10;
+    } while (temp > 0);
 
-	if (num == 0)
-	num_len = 1;
+    if (num == 0 && precision != 0)
+        num_len = 1;
 
-	total_len = (precision > num_len) ? precision : num_len;
-	total_len += sign_len;
+    total_len = (precision > num_len) ? precision : num_len;
+    total_len += sign_len;
 
-	/* Determine padding character - zero flag only applies when no precision and no left alignment */
-	if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
-	pad_char = '0';
+    /* Determine padding character - zero flag only applies when no precision and no left alignment */
+    if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
+        pad_char = '0';
 
-	/* Left padding */
-	if (!(flags & FLAG_MINUS) && width > total_len)
-	print_padding(width - total_len, pad_char, count);
+    /* Handle the special case where we need to print sign before zeros */
+    if (pad_char == '0' && (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE)))
+    {
+        /* Print sign first when using zero padding */
+        if (is_negative)
+            *count += _putchar('-');
+        else if (flags & FLAG_PLUS)
+            *count += _putchar('+');
+        else if (flags & FLAG_SPACE)
+            *count += _putchar(' ');
+    }
 
-	/* Print sign with zero padding special handling */
-	if (pad_char == '0')
-	{
-	/* With zero padding, sign comes before zeros */
-	if (is_negative)
-	*count += _putchar('-');
-	else if (flags & FLAG_PLUS)
-	*count += _putchar('+');
-	else if (flags & FLAG_SPACE)
-	*count += _putchar(' ');
-	}
-	else
-	{
-	/* With space padding, sign comes after spaces but before numbers */
-	if (is_negative)
-	*count += _putchar('-');
-	else if (flags & FLAG_PLUS)
-	*count += _putchar('+');
-	else if (flags & FLAG_SPACE)
-	*count += _putchar(' ');
-	}
+    /* Left padding */
+    if (!(flags & FLAG_MINUS) && width > total_len)
+        print_padding(width - total_len, pad_char, count);
 
-	/* Zero padding for precision */
-	if (precision > num_len)
-	print_zero_padding(precision - num_len, count);
+    /* Print sign if not already printed (for space padding) */
+    if (pad_char != '0' && (is_negative || (flags & FLAG_PLUS) || (flags & FLAG_SPACE)))
+    {
+        if (is_negative)
+            *count += _putchar('-');
+        else if (flags & FLAG_PLUS)
+            *count += _putchar('+');
+        else if (flags & FLAG_SPACE)
+            *count += _putchar(' ');
+    }
 
-	/* Print number */
-	if (num == 0)
-	*count += _putchar('0');
-	else if (num / 10)
-	print_number_int(num / 10, count);
-	
-	if (num != 0)
-	*count += _putchar((num % 10) + '0');
+    /* Zero padding for precision */
+    if (precision > num_len)
+        print_zero_padding(precision - num_len, count);
 
-	/* Right padding */
-	if (flags & FLAG_MINUS && width > total_len)
-	print_padding(width - total_len, ' ', count);
+    /* Print number */
+    if (num == 0 && precision != 0)
+        *count += _putchar('0');
+    else if (num / 10)
+        print_number_int(num / 10, count);
+    
+    if (num != 0)
+        *count += _putchar((num % 10) + '0');
+
+    /* Right padding */
+    if (flags & FLAG_MINUS && width > total_len)
+        print_padding(width - total_len, ' ', count);
 }
 
 /* Similar functions for long and short versions */
