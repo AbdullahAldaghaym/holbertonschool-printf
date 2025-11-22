@@ -43,6 +43,14 @@ int print_custom_string(va_list args);
 int print_pointer(va_list args);
 int print_hex_long(unsigned long n, int uppercase);
 
+/* Reversed string functions */
+int print_reversed_string(char *str, int width, int precision, int flags);
+int print_reversed_string_arg(va_list args, int width, int precision, int flags);
+
+/* Rot13 functions */
+int print_rot13_string(char *str, int width, int precision, int flags);
+int print_rot13_string_arg(va_list args, int width, int precision, int flags);
+
 /* Format parsing functions */
 int get_flags(const char *format, int *i);
 int get_length(const char *format, int *i);
@@ -78,10 +86,5 @@ int calculate_octal_length(unsigned int n, int flags);
 int calculate_hex_length(unsigned int n, int flags);
 void print_padding(int width, char pad_char, int *count);
 void print_zero_padding(int width, int *count);
-
-
-/* Reversed string functions */
-int print_reversed_string(char *str, int width, int precision, int flags);
-int print_reversed_string_arg(va_list args, int width, int precision, int flags);
 
 #endif /* MAIN_H */

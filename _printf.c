@@ -651,6 +651,76 @@ int print_reversed_string_arg(va_list args, int width, int precision, int flags)
     return print_reversed_string(str, width, precision, flags);
 }
 
+/* Rot13 String Functions */
+char apply_rot13(char c)
+{
+    if ((c >= 'a' && c <= 'z'))
+    {
+        if (c + 13 <= 'z')
+            return (c + 13);
+        else
+            return (c - 13);
+    }
+    else if ((c >= 'A' && c <= 'Z'))
+    {
+        if (c + 13 <= 'Z')
+            return (c + 13);
+        else
+            return (c - 13);
+    }
+    return (c);
+}
+
+int print_rot13_string(char *str, int width, int precision, int flags)
+{
+    int count = 0;
+    int len = 0;
+    int i;
+    char *temp = str;
+    char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
+
+    if (str == NULL)
+        str = "(null)";
+
+    /* Calculate string length considering precision */
+    while (*temp && (precision == -1 || len < precision))
+    {
+        len++;
+        temp++;
+    }
+
+    if (flags & FLAG_MINUS)
+    {
+        /* Left alignment: ROT13 string first, then padding */
+        for (i = 0; i < len; i++)
+        {
+            count += _putchar(apply_rot13(str[i]));
+        }
+        
+        if (width > len)
+            print_padding(width - len, ' ', &count);
+    }
+    else
+    {
+        /* Right alignment: padding first, then ROT13 string */
+        if (width > len)
+            print_padding(width - len, pad_char, &count);
+            
+        for (i = 0; i < len; i++)
+        {
+            count += _putchar(apply_rot13(str[i]));
+        }
+    }
+
+    return count;
+}
+
+int print_rot13_string_arg(va_list args, int width, int precision, int flags)
+{
+    char *str = va_arg(args, char *);
+    return print_rot13_string(str, width, precision, flags);
+}
+
 /* Precision Handling Functions */
 void print_number_with_precision(int n, int *count, int precision, int flags)
 {
@@ -1622,6 +1692,10 @@ int _printf(const char *format, ...)
 			else if (format[i] == 'r')  /* Reversed string conversion specifier */
 			{
 				count += print_reversed_string_arg(args, width, precision, flags);
+			}
+			else if (format[i] == 'R')  /* ROT13 string conversion specifier */
+			{
+				count += print_rot13_string_arg(args, width, precision, flags);
 			}
 			else if (format[i] == 'd' || format[i] == 'i')
 			{
