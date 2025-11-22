@@ -40,6 +40,7 @@ int print_hex(unsigned int n, int uppercase, int flags);
 int print_long_hex(unsigned long n, int uppercase, int flags);
 int print_short_hex(unsigned short n, int uppercase, int flags);
 int print_custom_string(va_list args);
+int print_custom_string_internal(char *str, int precision);
 int print_pointer(va_list args);
 int print_hex_long(unsigned long n, int uppercase);
 
