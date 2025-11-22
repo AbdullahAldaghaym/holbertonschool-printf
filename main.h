@@ -79,4 +79,9 @@ int calculate_hex_length(unsigned int n, int flags);
 void print_padding(int width, char pad_char, int *count);
 void print_zero_padding(int width, int *count);
 
+
+/* Reversed string functions */
+int print_reversed_string(char *str, int width, int precision, int flags);
+int print_reversed_string_arg(va_list args, int width, int precision, int flags);
+
 #endif /* MAIN_H */
