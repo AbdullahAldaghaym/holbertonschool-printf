@@ -600,9 +600,58 @@ int print_hex_long(unsigned long n, int uppercase)
     return count;
 }
 
-/* Precision Handling Functions */
+/* Reversed String Functions */
+int print_reversed_string(char *str, int width, int precision, int flags)
+{
+    int count = 0;
+    int len = 0;
+    int i;
+    char *temp = str;
+    char pad_char = (flags & FLAG_ZERO && !(flags & FLAG_MINUS)) ? '0' : ' ';
 
-/* Integer with precision */
+    if (str == NULL)
+        str = "(null)";
+
+    /* Calculate string length considering precision */
+    while (*temp && (precision == -1 || len < precision))
+    {
+        len++;
+        temp++;
+    }
+
+    if (flags & FLAG_MINUS)
+    {
+        /* Left alignment: reversed string first, then padding */
+        for (i = len - 1; i >= 0; i--)
+        {
+            count += _putchar(str[i]);
+        }
+        
+        if (width > len)
+            print_padding(width - len, ' ', &count);
+    }
+    else
+    {
+        /* Right alignment: padding first, then reversed string */
+        if (width > len)
+            print_padding(width - len, pad_char, &count);
+            
+        for (i = len - 1; i >= 0; i--)
+        {
+            count += _putchar(str[i]);
+        }
+    }
+
+    return count;
+}
+
+int print_reversed_string_arg(va_list args, int width, int precision, int flags)
+{
+    char *str = va_arg(args, char *);
+    return print_reversed_string(str, width, precision, flags);
+}
+
+/* Precision Handling Functions */
 void print_number_with_precision(int n, int *count, int precision, int flags)
 {
     unsigned int num;
@@ -655,7 +704,6 @@ void print_number_with_precision(int n, int *count, int precision, int flags)
         *count += _putchar((num % 10) + '0');
 }
 
-/* Unsigned with precision */
 int print_unsigned_with_precision(unsigned int n, int precision, int flags)
 {
     int count = 0;
@@ -686,7 +734,6 @@ int print_unsigned_with_precision(unsigned int n, int precision, int flags)
     return count;
 }
 
-/* Octal with precision */
 int print_octal_with_precision(unsigned int n, int precision, int flags)
 {
     int count = 0;
@@ -711,7 +758,6 @@ int print_octal_with_precision(unsigned int n, int precision, int flags)
     return count;
 }
 
-/* Hex with precision */
 int print_hex_with_precision(unsigned int n, int precision, int flags, int uppercase)
 {
     int count = 0;
@@ -735,7 +781,6 @@ int print_hex_with_precision(unsigned int n, int precision, int flags, int upper
     return count;
 }
 
-/* String with precision */
 int print_string_with_precision(char *str, int precision)
 {
     int count = 0;
@@ -754,7 +799,6 @@ int print_string_with_precision(char *str, int precision)
 }
 
 /* Combined Width and Precision Handling with Left Alignment Support */
-
 int print_char_with_width_precision(char c, int width, int precision, int flags)
 {
     int count = 0;
@@ -844,7 +888,7 @@ int print_percent_with_width(int width, int flags)
     return count;
 }
 
-/* Integer with width, precision and flags (including left alignment) */
+/* Integer with width, precision and flags */
 void print_number_with_width_precision(int n, int *count, int width, int precision, int flags)
 {
     char buffer[32];
@@ -896,7 +940,6 @@ void print_number_with_width_precision(int n, int *count, int width, int precisi
         total_len++;
 
     /* Determine padding character */
-    /* Zero flag is ignored when left alignment is specified or precision is specified */
     if ((flags & FLAG_ZERO) && !(flags & FLAG_MINUS) && precision == -1)
         pad_char = '0';
 
@@ -973,7 +1016,6 @@ void print_number_with_width_precision(int n, int *count, int width, int precisi
     }
 }
 
-/* Similar functions for long and short versions */
 void print_long_number_with_width_precision(long n, int *count, int width, int precision, int flags)
 {
     print_number_with_width_precision((int)n, count, width, precision, flags);
@@ -1061,7 +1103,6 @@ int print_unsigned_with_width_precision(unsigned int n, int width, int precision
     return count;
 }
 
-/* Long unsigned with width and precision */
 int print_long_unsigned_with_width_precision(unsigned long n, int width, int precision, int flags)
 {
     int count = 0;
@@ -1105,7 +1146,6 @@ int print_long_unsigned_with_width_precision(unsigned long n, int width, int pre
     return count;
 }
 
-/* Short unsigned with width and precision */
 int print_short_unsigned_with_width_precision(unsigned short n, int width, int precision, int flags)
 {
     return print_unsigned_with_width_precision((unsigned int)n, width, precision, flags);
@@ -1203,7 +1243,6 @@ int print_octal_with_width_precision(unsigned int n, int width, int precision, i
     return count;
 }
 
-/* Long octal with width and precision */
 int print_long_octal_with_width_precision(unsigned long n, int width, int precision, int flags)
 {
     int count = 0;
@@ -1256,7 +1295,6 @@ int print_long_octal_with_width_precision(unsigned long n, int width, int precis
     return count;
 }
 
-/* Short octal with width and precision */
 int print_short_octal_with_width_precision(unsigned short n, int width, int precision, int flags)
 {
     return print_octal_with_width_precision((unsigned int)n, width, precision, flags);
@@ -1371,7 +1409,6 @@ int print_hex_with_width_precision(unsigned int n, int width, int precision, int
     return count;
 }
 
-/* Long hex with width and precision */
 int print_long_hex_with_width_precision(unsigned long n, int width, int precision, int flags, int uppercase)
 {
     int count = 0;
@@ -1423,7 +1460,6 @@ int print_long_hex_with_width_precision(unsigned long n, int width, int precisio
     return count;
 }
 
-/* Short hex with width and precision */
 int print_short_hex_with_width_precision(unsigned short n, int width, int precision, int flags, int uppercase)
 {
     return print_hex_with_width_precision((unsigned int)n, width, precision, flags, uppercase);
@@ -1582,6 +1618,10 @@ int _printf(const char *format, ...)
 			else if (format[i] == 'S')
 			{
 				count += print_custom_string_with_width_precision(args, width, precision, flags);
+			}
+			else if (format[i] == 'r')  /* Reversed string conversion specifier */
+			{
+				count += print_reversed_string_arg(args, width, precision, flags);
 			}
 			else if (format[i] == 'd' || format[i] == 'i')
 			{
