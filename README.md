@@ -306,9 +306,9 @@ int get_length(const char *format, int *i);
 
 ### **Project Developers**
 
-| **Solaf Alessa** | **Abdullah Aldaghaym** |
+| **Mustafa Alalmi** | **Abdullah Aldaghaym** |
 |:----------------:|:----------------------:|
-| [![GitHub](https://img.shields.io/badge/📁_GitHub-Profile-black?style=for-the-badge&logo=github)](https://github.com/lilsouy) | [![GitHub](https://img.shields.io/badge/📁_GitHub-Profile-black?style=for-the-badge&logo=github)](https://github.com/abdullahaldaghaym) |
+| [![GitHub](https://img.shields.io/badge/📁_GitHub-Profile-black?style=for-the-badge&logo=github)](https://github.com/i1SaSa) | [![GitHub](https://img.shields.io/badge/📁_GitHub-Profile-black?style=for-the-badge&logo=github)](https://github.com/abdullahaldaghaym) |
 | **C Developer** | **C Developer** |
 
 </div>
